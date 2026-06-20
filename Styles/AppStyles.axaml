@@ -1,0 +1,27 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Styles.Resources>
+        <!-- App colour palette — single place to change the look -->
+        <SolidColorBrush x:Key="AppBarBrush"    Color="#1E1E1E"/>
+        <SolidColorBrush x:Key="StatusBarBrush" Color="#2D2D2D"/>
+        <SolidColorBrush x:Key="AccentBrush"    Color="#88CCFF"/>
+        <SolidColorBrush x:Key="MutedBrush"     Color="#666666"/>
+
+        <!-- Base font size used throughout the app -->
+        <x:Double x:Key="AppFontSize">13</x:Double>
+    </Styles.Resources>
+
+    <!-- Consistent padding, font size, and corner radius on every Button -->
+    <Style Selector="Button">
+        <Setter Property="Padding"      Value="10,5"/>
+        <Setter Property="FontSize"     Value="{StaticResource AppFontSize}"/>
+        <Setter Property="CornerRadius" Value="4"/>
+    </Style>
+
+    <!-- Body text uses the same base font size -->
+    <Style Selector="TextBlock">
+        <Setter Property="FontSize" Value="{StaticResource AppFontSize}"/>
+    </Style>
+
+</Styles>

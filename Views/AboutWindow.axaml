@@ -1,0 +1,49 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="TimeTracker.Views.AboutWindow"
+        Title="About TimeTracker"
+        Icon="/Assets/app-icon.png"
+        Width="340" Height="440"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False">
+
+    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="16" Margin="0,24,0,0">
+
+        <Image Source="avares://TimeTracker/Assets/app-icon.png"
+               Width="80"
+               HorizontalAlignment="Center"/>
+
+        <StackPanel HorizontalAlignment="Center" Spacing="4">
+            <TextBlock Text="TimeTracker"
+                       FontSize="22"
+                       FontWeight="Bold"
+                       HorizontalAlignment="Center"/>
+            <TextBlock Text="Version 1.0"
+                       Opacity="0.6"
+                       HorizontalAlignment="Center"/>
+        </StackPanel>
+
+        <TextBlock Text="Built with AvaloniaUI · .NET 10 · EF Core 9"
+                   Opacity="0.5"
+                   FontSize="11"
+                   HorizontalAlignment="Center"/>
+
+        <Image Source="avares://TimeTracker/Assets/slok-logo.png"
+               Width="120"
+               HorizontalAlignment="Center"
+               Opacity="0.85"/>
+
+        <TextBlock Text="Developed by Slok Software"
+                   Opacity="0.5"
+                   FontSize="11"
+                   HorizontalAlignment="Center"/>
+
+        <Button Content="Close"
+                Width="100"
+                HorizontalAlignment="Center"
+                Margin="0,0,0,16"
+                Click="CloseButton_Click"/>
+
+    </StackPanel>
+</Window>

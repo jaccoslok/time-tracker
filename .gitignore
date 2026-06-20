@@ -1,0 +1,50 @@
+# Build output
+bin/
+obj/
+out/
+TestResults/
+
+# User-specific files
+*.user
+*.rsuser
+*.suo
+*.userosscache
+*.sln.docstates
+
+# IDE settings
+.vs/
+.vscode/
+.idea/
+
+# Rider
+*.sln.iml
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+
+# Local tools and caches
+.claude/
+
+# Logs and diagnostics
+*.log
+*.pid
+*.seed
+*.pid.lock
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# Publish and packaged app artifacts
+publish/
+*.app/
+
+# SQLite local files (if created in workspace)
+*.db
+*.db-shm
+*.db-wal
+
+# Generated files
+Generated/

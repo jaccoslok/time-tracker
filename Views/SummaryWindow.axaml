@@ -1,0 +1,66 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:TimeTracker.ViewModels"
+        x:Class="TimeTracker.Views.SummaryWindow"
+        x:DataType="vm:SummaryViewModel"
+        Title="Summary"
+        Width="900" Height="520"
+        WindowStartupLocation="CenterScreen">
+
+    <Design.DataContext>
+        <vm:SummaryViewModel/>
+    </Design.DataContext>
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- DATE RANGE PICKER -->
+        <Border Grid.Row="0" Padding="12,10">
+            <StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
+                <TextBlock Text="From" VerticalAlignment="Center"/>
+                <DatePicker SelectedDate="{Binding FromDate}"/>
+                <TextBlock Text="To" VerticalAlignment="Center"/>
+                <DatePicker SelectedDate="{Binding ToDate}"/>
+            </StackPanel>
+        </Border>
+
+        <!-- ENTRY LIST -->
+        <DockPanel Grid.Row="1" Margin="8">
+
+            <!-- Column headers -->
+            <Grid DockPanel.Dock="Top" ColumnDefinitions="90,120,120,*,60,60,70" Margin="8,0,0,2">
+                <TextBlock Grid.Column="0" Text="Date"        FontWeight="SemiBold"/>
+                <TextBlock Grid.Column="1" Text="Project"     FontWeight="SemiBold"/>
+                <TextBlock Grid.Column="2" Text="Task"        FontWeight="SemiBold"/>
+                <TextBlock Grid.Column="3" Text="Description" FontWeight="SemiBold"/>
+                <TextBlock Grid.Column="4" Text="Start"       FontWeight="SemiBold"/>
+                <TextBlock Grid.Column="5" Text="Stop"        FontWeight="SemiBold"/>
+                <TextBlock Grid.Column="6" Text="Duration"    FontWeight="SemiBold"/>
+            </Grid>
+
+            <ListBox ItemsSource="{Binding Rows}">
+                <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="vm:SummaryRow">
+                        <Grid ColumnDefinitions="90,120,120,*,60,60,70">
+                            <TextBlock Grid.Column="0" Text="{Binding Date}"        Padding="0,2"/>
+                            <TextBlock Grid.Column="1" Text="{Binding ProjectName}" Padding="0,2"/>
+                            <TextBlock Grid.Column="2" Text="{Binding TaskName}"    Padding="0,2"/>
+                            <TextBlock Grid.Column="3" Text="{Binding Description}" Padding="0,2"/>
+                            <TextBlock Grid.Column="4" Text="{Binding StartTime}"   Padding="0,2"/>
+                            <TextBlock Grid.Column="5" Text="{Binding StopTime}"    Padding="0,2"/>
+                            <TextBlock Grid.Column="6" Text="{Binding Duration}"    Padding="0,2"/>
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </DockPanel>
+
+        <!-- TOTAL -->
+        <Border Grid.Row="2" Background="#2D2D2D" Padding="12,6">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Foreground="White" Text="Total hours:"/>
+                <TextBlock Foreground="#88CCFF" Text="{Binding TotalHours, StringFormat={}{0:F1}}"/>
+            </StackPanel>
+        </Border>
+
+    </Grid>
+</Window>

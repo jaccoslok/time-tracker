@@ -1,0 +1,27 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="TimeTracker.App"
+             xmlns:local="using:TimeTracker"
+             Name="TimeTracker"
+             RequestedThemeVariant="Default">
+             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+
+    <Application.DataTemplates>
+        <local:ViewLocator/>
+    </Application.DataTemplates>
+
+    <Application.Styles>
+        <FluentTheme />
+        <StyleInclude Source="avares://TimeTracker/Styles/AppStyles.axaml"/>
+    </Application.Styles>
+
+    <NativeMenu.Menu>
+        <!-- Items go directly into the macOS app menu (the one the OS names after the process) -->
+        <NativeMenu>
+            <NativeMenuItem Header="About TimeTracker"/>
+            <NativeMenuItemSeparator/>
+            <NativeMenuItem Header="Quit TimeTracker" Gesture="Meta+Q"/>
+        </NativeMenu>
+    </NativeMenu.Menu>
+
+</Application>
