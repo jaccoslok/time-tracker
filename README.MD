@@ -58,6 +58,23 @@ Windows x64:
 dotnet publish -r win-x64 --self-contained -p:PublishSingleFile=true -c Release
 ```
 
+## GitHub Releases (automated)
+
+This repository includes a GitHub Actions workflow at .github/workflows/release.yml.
+When you push a tag starting with v (for example v1.0.0), it will:
+
+- Build macOS arm64 publish output
+- Build Windows x64 publish output
+- Zip both artifacts
+- Create a GitHub Release and attach both zip files
+
+Trigger a release with:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
 ## macOS app bundle
 
 This repository includes a helper script to build a .app bundle on macOS:
