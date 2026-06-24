@@ -13,6 +13,7 @@ namespace TimeTracker.Views;
 public partial class MainWindow : Window
 {
     private MainWindowViewModel ViewModel => (MainWindowViewModel)DataContext!;
+    private bool _isCloseReminderVisible;
 
     public MainWindow()
     {
@@ -34,6 +35,14 @@ public partial class MainWindow : Window
     // OnClosing fires before the window is destroyed — last chance to write settings.
     protected override void OnClosing(WindowClosingEventArgs e)
     {
+        if (ViewModel.IsTimerRunning)
+        {
+            e.Cancel = true;
+            if (!_isCloseReminderVisible)
+                _ = ShowInfoDialog("A task is still running. Stop the timer before closing the app.");
+            return;
+        }
+
         WindowSettingsService.Save(new WindowSettings(Width, Height, Position.X, Position.Y));
         base.OnClosing(e);
     }
@@ -231,5 +240,42 @@ public partial class MainWindow : Window
         };
 
         return await dialog.ShowDialog<bool>(this);
+    }
+
+    private async Task ShowInfoDialog(string message)
+    {
+        _isCloseReminderVisible = true;
+
+        var dialog = new Window
+        {
+            Title = "Task Running",
+            SizeToContent = SizeToContent.WidthAndHeight,
+            MinWidth = 360,
+            CanResize = false,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            ShowInTaskbar = false
+        };
+
+        var okButton = new Button { Content = "OK", Width = 80 };
+        okButton.Click += (_, _) => dialog.Close();
+
+        dialog.Content = new StackPanel
+        {
+            Margin = new Avalonia.Thickness(20),
+            Spacing = 18,
+            Children =
+            {
+                new TextBlock { Text = message, TextWrapping = Avalonia.Media.TextWrapping.Wrap },
+                new StackPanel
+                {
+                    Orientation = Avalonia.Layout.Orientation.Horizontal,
+                    HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
+                    Children = { okButton }
+                }
+            }
+        };
+
+        await dialog.ShowDialog(this);
+        _isCloseReminderVisible = false;
     }
 }

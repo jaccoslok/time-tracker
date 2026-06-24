@@ -1,6 +1,7 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using Avalonia.Controls;
 using TimeTracker.Repositories;
 
 namespace TimeTracker.ViewModels;
@@ -55,6 +56,21 @@ public class SummaryViewModel : ViewModelBase
 
     public SummaryViewModel()
     {
+        // Skip DB access when the Avalonia XAML previewer instantiates this ViewModel.
+        if (!Design.IsDesignMode)
+            LoadSummary();
+    }
+
+    public void SetTodayRange()
+    {
+        var today = DateTimeOffset.Now.Date;
+
+        _fromDate = today;
+        _toDate = today;
+
+        OnPropertyChanged(nameof(FromDate));
+        OnPropertyChanged(nameof(ToDate));
+
         LoadSummary();
     }
 
@@ -67,9 +83,9 @@ public class SummaryViewModel : ViewModelBase
 
         var entries = _timeEntryRepository.GetAllInRange(from, to);
 
-        // One row per entry, ordered by date then project then task
+        // One row per entry, newest first
         var rows = entries
-            .OrderBy(entry => entry.StartedAt)
+            .OrderByDescending(entry => entry.StartedAt)
             .ThenBy(entry => entry.ProjectTask.Project.Name)
             .ThenBy(entry => entry.ProjectTask.Name)
             .Select(entry => new SummaryRow

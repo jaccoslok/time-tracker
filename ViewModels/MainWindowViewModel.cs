@@ -1,6 +1,7 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using Avalonia.Controls;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.Input;
 using TimeTracker.Models;
@@ -52,6 +53,7 @@ public class MainWindowViewModel : ViewModelBase
     private DateTime _timerStartedAt;
     // Captured when Start is clicked — holds the task even if the user navigates away
     private ProjectTask? _timerTask;
+    private string _runningDescription = string.Empty;
 
     private bool _isTimerRunning;
     public bool IsTimerRunning
@@ -98,9 +100,13 @@ public class MainWindowViewModel : ViewModelBase
 
     public MainWindowViewModel()
     {
-        StartTimerCommand = new RelayCommand(StartTimer, () => SelectedTask is not null && !IsTimerRunning);
+        StartTimerCommand = new RelayCommand(StartTimer, () => SelectedTask is not null);
         StopTimerCommand  = new RelayCommand(StopTimer,  () => IsTimerRunning);
-        LoadProjects();
+
+        // Skip DB access when the Avalonia XAML previewer instantiates this ViewModel
+        // via <Design.DataContext> — SQLite native libs are not available in the previewer.
+        if (!Design.IsDesignMode)
+            LoadProjects();
     }
 
     // --- Projects ---
@@ -208,43 +214,64 @@ public class MainWindowViewModel : ViewModelBase
 
     private void StartTimer()
     {
-        _timerTask      = SelectedTask;   // capture now — SelectedTask may change later
-        _timerStartedAt = DateTime.UtcNow;
-        IsTimerRunning  = true;
+        if (SelectedTask is null) return;
 
-        TimerTaskName = _timerTask?.Name ?? "Unknown task";
+        var switchAt = DateTime.UtcNow;
 
-        _timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
-        _timer.Tick += OnTimerTick;
-        _timer.Start();
+        // If a timer is already running, close the current entry first and start a new one
+        // at the exact same timestamp (no lost or overlapping time).
+        if (IsTimerRunning)
+            SaveRunningEntry(switchAt);
+
+        _timerTask = SelectedTask; // capture now — SelectedTask may change later
+        _timerStartedAt = switchAt;
+        _runningDescription = CurrentDescription;
+        IsTimerRunning = true;
+        // Show "ProjectName TaskName" so tasks with identical names are distinguishable
+        TimerTaskName = $"{SelectedProject?.Name} | {_timerTask.Name}";
+        ElapsedTime = "00:00:00";
+
+        if (_timer is null)
+        {
+            _timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+            _timer.Tick += OnTimerTick;
+            _timer.Start();
+        }
     }
 
     private void StopTimer()
     {
+        if (!IsTimerRunning) return;
+
+        SaveRunningEntry(DateTime.UtcNow);
+
         _timer?.Stop();
         _timer = null;
         IsTimerRunning = false;
-        ElapsedTime    = "00:00:00";
-        TimerTaskName  = "Select a task to start the timer";
+        ElapsedTime = "00:00:00";
+        TimerTaskName = "Select a task to start the timer";
+        _timerTask = null;
+        _runningDescription = string.Empty;
+        CurrentDescription = string.Empty;
+    }
 
-        if (_timerTask is null) return; // safety: should never be null, but guard anyway
+    private void SaveRunningEntry(DateTime stoppedAt)
+    {
+        if (_timerTask is null) return;
 
         var entry = new TimeEntry
         {
             ProjectTaskId = _timerTask.Id,    // use the captured task, not SelectedTask
-            Description   = CurrentDescription,
+            Description   = _runningDescription,
             StartedAt     = _timerStartedAt,
-            StoppedAt     = DateTime.UtcNow
+            StoppedAt     = stoppedAt
         };
 
         _timeEntryRepository.Add(entry);
 
-        // Only reload the time log if the user is still on the task the timer ran for
+        // Only reload the time log if the user is still on the task being closed
         if (SelectedTask?.Id == _timerTask.Id)
             LoadTimeEntriesForTask(SelectedTask);
-
-        _timerTask         = null;
-        CurrentDescription = string.Empty;
     }
 
     // Called every second by the timer — updates the displayed elapsed time

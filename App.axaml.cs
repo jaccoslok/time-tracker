@@ -21,14 +21,17 @@ public partial class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
-        // Apply any pending EF Core migrations at startup.
-        // On a first run this creates the database schema from scratch.
-        // On subsequent runs it is a no-op if the schema is already up to date.
-        using (var db = new AppDbContext())
-            db.Database.Migrate();
-
+        // IClassicDesktopStyleApplicationLifetime is only present in a real desktop run.
+        // The Avalonia XAML previewer uses a different lifetime (no SQLite native libs),
+        // so gating on this type reliably prevents the missing e_sqlite3 crash in preview.
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
+            // Apply any pending EF Core migrations at startup.
+            // On a first run this creates the database schema from scratch.
+            // On subsequent runs it is a no-op if the schema is already up to date.
+            using (var db = new AppDbContext())
+                db.Database.Migrate();
+
             desktop.MainWindow = new MainWindow
             {
                 DataContext = new MainWindowViewModel(),

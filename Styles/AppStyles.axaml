@@ -2,26 +2,80 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <Styles.Resources>
-        <!-- App colour palette — single place to change the look -->
-        <SolidColorBrush x:Key="AppBarBrush"    Color="#1E1E1E"/>
-        <SolidColorBrush x:Key="StatusBarBrush" Color="#2D2D2D"/>
-        <SolidColorBrush x:Key="AccentBrush"    Color="#88CCFF"/>
-        <SolidColorBrush x:Key="MutedBrush"     Color="#666666"/>
+        <ResourceDictionary>
 
-        <!-- Base font size used throughout the app -->
-        <x:Double x:Key="AppFontSize">13</x:Double>
+            <!-- ── Theme-aware palette ────────────────────────────────────────────
+                 AccentBrush / MutedBrush change between light and dark mode so
+                 that text in the content area always has enough contrast.         -->
+            <ResourceDictionary.ThemeDictionaries>
+
+                <ResourceDictionary x:Key="Light">
+                    <!-- Deep blue: readable on white/light-gray backgrounds -->
+                    <SolidColorBrush x:Key="AccentBrush" Color="#1D6FB8"/>
+                    <SolidColorBrush x:Key="MutedBrush"  Color="#6B7280"/>
+                </ResourceDictionary>
+
+                <ResourceDictionary x:Key="Dark">
+                    <!-- Sky blue: readable on dark backgrounds -->
+                    <SolidColorBrush x:Key="AccentBrush" Color="#93C5FD"/>
+                    <SolidColorBrush x:Key="MutedBrush"  Color="#9CA3AF"/>
+                </ResourceDictionary>
+
+            </ResourceDictionary.ThemeDictionaries>
+
+            <!-- ── Constant colours (same in both modes) ──────────────────────────
+                 The app bar and status bar use a dark slate colour regardless of
+                 system theme, so white text always has sufficient contrast.       -->
+            <SolidColorBrush x:Key="AppBarBrush"        Color="#1E293B"/>
+            <SolidColorBrush x:Key="StatusBarBrush"     Color="#0F172A"/>
+            <!-- Foreground used directly on the dark bars -->
+            <SolidColorBrush x:Key="BarForegroundBrush" Color="#E2E8F0"/>
+            <!-- Highlighted text on the dark bars (project/task name, total hours) -->
+            <SolidColorBrush x:Key="BarAccentBrush"     Color="#7CB9E8"/>
+            <!-- Separator / muted text on dark bars -->
+            <SolidColorBrush x:Key="BarMutedBrush"      Color="#64748B"/>
+
+            <x:Double x:Key="AppFontSize">13</x:Double>
+
+        </ResourceDictionary>
     </Styles.Resources>
 
-    <!-- Consistent padding, font size, and corner radius on every Button -->
+    <!-- ── Base control styles ─────────────────────────────────────────────── -->
+
     <Style Selector="Button">
         <Setter Property="Padding"      Value="10,5"/>
         <Setter Property="FontSize"     Value="{StaticResource AppFontSize}"/>
         <Setter Property="CornerRadius" Value="4"/>
     </Style>
 
-    <!-- Body text uses the same base font size -->
     <Style Selector="TextBlock">
         <Setter Property="FontSize" Value="{StaticResource AppFontSize}"/>
+    </Style>
+
+    <!-- ── Top-bar buttons (Summary / About) ──────────────────────────────────
+         These buttons sit on the dark AppBarBrush background.
+         We use a transparent base + semi-white hover overlay so the foreground
+         stays white in both light and dark mode regardless of Fluent's defaults. -->
+
+    <Style Selector="Button.topbar">
+        <Setter Property="Background"      Value="Transparent"/>
+        <Setter Property="Foreground"      Value="{StaticResource BarForegroundBrush}"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="CornerRadius"    Value="4"/>
+        <Setter Property="Padding"         Value="10,5"/>
+        <Setter Property="FontSize"        Value="{StaticResource AppFontSize}"/>
+    </Style>
+
+    <!-- Override the Fluent template's ContentPresenter so hover/press cannot
+         change the foreground colour to black (which happens in light mode).   -->
+    <Style Selector="Button.topbar:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="#22FFFFFF"/>
+        <Setter Property="Foreground" Value="{StaticResource BarForegroundBrush}"/>
+    </Style>
+
+    <Style Selector="Button.topbar:pressed /template/ ContentPresenter">
+        <Setter Property="Background" Value="#33FFFFFF"/>
+        <Setter Property="Foreground" Value="{StaticResource BarForegroundBrush}"/>
     </Style>
 
 </Styles>
