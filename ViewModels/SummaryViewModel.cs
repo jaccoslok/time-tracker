@@ -9,13 +9,15 @@ namespace TimeTracker.ViewModels;
 // One row in the summary list — represents a single time entry
 public class SummaryRow
 {
-    public string Date        { get; set; } = string.Empty;
-    public string ProjectName { get; set; } = string.Empty;
-    public string TaskName    { get; set; } = string.Empty;
-    public string Description { get; set; } = string.Empty;
-    public string StartTime   { get; set; } = string.Empty;
-    public string StopTime    { get; set; } = string.Empty;
-    public string Duration    { get; set; } = string.Empty;
+    public int    Id                { get; set; }
+    public string Date              { get; set; } = string.Empty;
+    public string ProjectName       { get; set; } = string.Empty;
+    public string TaskName          { get; set; } = string.Empty;
+    public string Description       { get; set; } = string.Empty;
+    public string StartTime         { get; set; } = string.Empty;
+    public string StopTime          { get; set; } = string.Empty;
+    public string Duration          { get; set; } = string.Empty;
+    public string AiTimeSavedHours  { get; set; } = string.Empty;
 }
 
 public class SummaryViewModel : ViewModelBase
@@ -54,6 +56,13 @@ public class SummaryViewModel : ViewModelBase
         set => SetProperty(ref _totalHours, value);
     }
 
+    private decimal _totalAiTimeSaved;
+    public decimal TotalAiTimeSaved
+    {
+        get => _totalAiTimeSaved;
+        set => SetProperty(ref _totalAiTimeSaved, value);
+    }
+
     public SummaryViewModel()
     {
         // Skip DB access when the Avalonia XAML previewer instantiates this ViewModel.
@@ -83,32 +92,42 @@ public class SummaryViewModel : ViewModelBase
 
         var entries = _timeEntryRepository.GetAllInRange(from, to);
 
-        // One row per entry, newest first
+        // Sorting is now handled by the repository query (pushed to SQLite).
         var rows = entries
-            .OrderByDescending(entry => entry.StartedAt)
-            .ThenBy(entry => entry.ProjectTask.Project.Name)
-            .ThenBy(entry => entry.ProjectTask.Name)
             .Select(entry => new SummaryRow
             {
-                Date        = entry.StartedAt.ToLocalTime().ToString("dd-MM-yyyy"),
-                ProjectName = entry.ProjectTask.Project.Name,
-                TaskName    = entry.ProjectTask.Name,
-                Description = entry.Description,
-                StartTime   = entry.StartedAt.ToLocalTime().ToString("HH:mm"),
-                StopTime    = entry.StoppedAt?.ToLocalTime().ToString("HH:mm") ?? "—",
-                Duration    = FormatDuration(entry.Duration)
+                Id                = entry.Id,
+                Date              = entry.StartedAt.ToLocalTime().ToString("dd-MM-yyyy"),
+                ProjectName       = entry.ProjectTask.Project.Name,
+                TaskName          = entry.ProjectTask.Name,
+                Description       = entry.Description,
+                StartTime         = entry.StartedAt.ToLocalTime().ToString("HH:mm"),
+                StopTime          = entry.StoppedAt?.ToLocalTime().ToString("HH:mm") ?? "—",
+                Duration          = FormatDuration(entry.Duration),
+                AiTimeSavedHours  = FormatAiTime(entry.AiTimeSavedHours)
             });
 
         foreach (var row in rows)
             Rows.Add(row);
 
         TotalHours = entries.Sum(entry => entry.Duration?.TotalHours ?? 0);
+        TotalAiTimeSaved = entries.Sum(entry => entry.AiTimeSavedHours ?? 0m);
     }
+
+    // Called from the view after an entry is edited so the list refreshes
+    public void Reload() => LoadSummary();
 
     // Converts a nullable TimeSpan to "h:mm", e.g. 1h 45m → "1:45"
     private static string FormatDuration(TimeSpan? duration)
     {
         if (duration is null) return "—";
         return $"{(int)duration.Value.TotalHours}:{duration.Value.Minutes:D2}";
+    }
+
+    // Formats AI time saved: returns "—" if null or 0, otherwise the decimal value with 1 decimal place
+    private static string FormatAiTime(decimal? aiHours)
+    {
+        if (aiHours is null or 0) return "—";
+        return aiHours.Value.ToString("F1");
     }
 }

@@ -2,7 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="TimeTracker.Views.AboutWindow"
         Title="About TimeTracker"
-        Icon="/Assets/app-icon.png"
+        Icon="/Assets/app-icon.ico"
         Width="340" Height="440"
         CanResize="False"
         WindowStartupLocation="CenterOwner"
@@ -10,7 +10,7 @@
 
     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="16" Margin="0,24,0,0">
 
-        <Image Source="avares://TimeTracker/Assets/app-icon.png"
+        <Image Source="avares://TimeTracker/Assets/app-icon.ico"
                Width="80"
                HorizontalAlignment="Center"/>
 

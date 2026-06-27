@@ -1,26 +1,41 @@
 # TimeTracker
 
-Simple desktop time registration app built with C#, Avalonia UI, MVVM, EF Core, and SQLite.
+Desktop time registration app built with C#, Avalonia UI, MVVM, EF Core, and SQLite.
 
-## What this app does
+## What The App Does
 
-- Manage projects and tasks
-- Start and stop a timer for task-based tracking
-- Add and edit manual time entries
-- View time logs and date-filtered summary data
-- Persist data locally with SQLite
+- Project and task management (create, edit, delete)
+- Start/stop timer tracking per task
+- Manual time entry with edit/delete support
+- Summary screen with date filters
+- Excel export for filtered summary results
+- AI time saved tracking per entry
 
-## Tech stack
+## Value Based Billing Support
+
+TimeTracker includes a field called AI Time Saved (hours).
+
+Purpose:
+- AI may reduce effort for a task while token/API usage introduces cost.
+- Tracking AI-saved time helps quantify added value for value-based billing.
+- Summary view includes a filtered total: Timed saved by AI.
+
+This gives teams two perspectives:
+- Delivery effort (Total hours)
+- AI-enabled value gain (Timed saved by AI)
+
+## Tech Stack
 
 - .NET 10
 - Avalonia 12
 - CommunityToolkit.Mvvm
 - EF Core SQLite
+- ClosedXML (Excel export)
 
 ## Prerequisites
 
 - macOS, Windows, or Linux
-- .NET SDK 10 installed
+- .NET SDK 10.0.300 (pinned via global.json)
 
 Check your SDK:
 
@@ -28,12 +43,32 @@ Check your SDK:
 dotnet --version
 ```
 
-## Clone and run
+## Contributor Setup (Dependencies)
+
+.NET dependencies are managed by project files and restored automatically. There is no separate requirements.txt like Python.
+
+Run this once after cloning:
+
+```bash
+dotnet restore
+dotnet tool restore
+```
+
+What these do:
+- dotnet restore: restores NuGet packages from TimeTracker.csproj
+- dotnet tool restore: restores local CLI tools from dotnet-tools.json (for example dotnet-ef)
+
+Reproducibility setup in this repo:
+- global.json pins the SDK version
+- packages.lock.json pins resolved NuGet dependency graph
+
+## Clone And Run
 
 ```bash
 git clone https://github.com/<your-account>/TimeTracker.git
 cd TimeTracker
 dotnet restore
+dotnet tool restore
 dotnet run
 ```
 
@@ -43,6 +78,25 @@ dotnet run
 dotnet build -c Debug
 dotnet build -c Release
 ```
+
+## Database Migrations (EF Core)
+
+Use the local tool so contributors run the same EF version:
+
+```bash
+dotnet tool restore
+dotnet dotnet-ef migrations add <MigrationName>
+dotnet dotnet-ef database update
+```
+
+## Summary Screen Features
+
+- Filter by From/To date and quick Today button
+- Per-entry AI Time column
+- Footer totals:
+	- Total hours
+	- Timed saved by AI (based on current filter)
+- Export to Excel button for filtered rows and totals
 
 ## Publish
 
@@ -58,7 +112,7 @@ Windows x64:
 dotnet publish -r win-x64 --self-contained -p:PublishSingleFile=true -c Release
 ```
 
-## GitHub Releases (automated)
+## GitHub Releases (Automated)
 
 This repository includes a GitHub Actions workflow at .github/workflows/release.yml.
 When you push a tag starting with v (for example v1.0.0), it will:
@@ -75,7 +129,7 @@ git tag v1.0.0
 git push origin v1.0.0
 ```
 
-## macOS app bundle
+## macOS App Bundle
 
 This repository includes a helper script to build a .app bundle on macOS:
 
@@ -85,46 +139,7 @@ bash bundle-macos.sh
 
 The script creates TimeTracker.app on your Desktop.
 
-## Using Avalonia with GitHub
-
-This section is a practical workflow for developing Avalonia apps in a GitHub repository.
-
-1. Create a branch for each feature or fix.
-
-```bash
-git checkout -b feature/<short-name>
-```
-
-2. Make changes and run local checks.
-
-```bash
-dotnet restore
-dotnet build -c Release
-dotnet run
-```
-
-3. Commit clear, focused changes.
-
-```bash
-git add .
-git commit -m "Add <feature-name>"
-```
-
-4. Push and open a pull request.
-
-```bash
-git push -u origin feature/<short-name>
-```
-
-5. In pull requests, include:
-- What changed
-- Why it changed
-- How it was tested
-- Screenshots for UI changes
-
-6. Keep Avalonia dependencies consistent by updating package versions together in TimeTracker.csproj.
-
-## Project structure
+## Project Structure
 
 ```text
 TimeTracker/
@@ -140,17 +155,11 @@ TimeTracker/
 ## License
 
 This project is licensed under the GNU General Public License v3.0.
-See the LICENSE file for full terms.
+See LICENSE for details.
 
-## Contributors welcome
+## Contributors Welcome
 
-We welcome contributors and would love your help improving TimeTracker.
-
-If you want to contribute:
-
-- Open an issue to discuss a bug, idea, or enhancement
-- Create a feature branch and keep changes focused
-- Submit a pull request with a clear summary and testing notes
-- Keep it simple and stupid:-)
-
-Thank you for helping improve the app for everyone.
+- Open an issue for bugs, ideas, or enhancements
+- Use a focused feature branch
+- Submit a pull request with testing notes and UI screenshots where relevant
+- Keep changes small and clear

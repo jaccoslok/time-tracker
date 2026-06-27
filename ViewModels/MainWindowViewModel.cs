@@ -28,9 +28,14 @@ public class MainWindowViewModel : ViewModelBase
         set
         {
             if (SetProperty(ref _selectedProject, value))
+            {
+                OnPropertyChanged(nameof(SelectedProjectName));
                 LoadTasksForProject(value);
+            }
         }
     }
+
+    public string SelectedProjectName => SelectedProject?.Name ?? "—";
 
     private ProjectTask? _selectedTask;
     public ProjectTask? SelectedTask
@@ -40,12 +45,15 @@ public class MainWindowViewModel : ViewModelBase
         {
             if (SetProperty(ref _selectedTask, value))
             {
+                OnPropertyChanged(nameof(SelectedTaskName));
                 LoadTimeEntriesForTask(value);
                 // Refresh the Start button's enabled state when the task selection changes
                 StartTimerCommand.NotifyCanExecuteChanged();
             }
         }
     }
+
+    public string SelectedTaskName => SelectedTask?.Name ?? "—";
 
     // --- Timer state ---
 
@@ -124,8 +132,10 @@ public class MainWindowViewModel : ViewModelBase
     public void AddProject(Project project)
     {
         _projectRepository.Add(project);
+        // Pre-set the backing field so LoadProjects selects the new project directly,
+        // avoiding a second LoadTasksForProject triggered by the explicit setter below.
+        _selectedProject = project;
         LoadProjects();
-        SelectedProject = Projects.FirstOrDefault(p => p.Id == project.Id);
     }
 
     public void UpdateProject(Project project)
@@ -156,8 +166,10 @@ public class MainWindowViewModel : ViewModelBase
     public void AddTask(ProjectTask task)
     {
         _taskRepository.Add(task);
+        // Pre-set the backing field so LoadTasksForProject selects the new task directly,
+        // avoiding a second LoadTimeEntriesForTask triggered by the explicit setter below.
+        _selectedTask = task;
         LoadTasksForProject(SelectedProject);
-        SelectedTask = Tasks.FirstOrDefault(t => t.Id == task.Id);
     }
 
     public void UpdateTask(ProjectTask task)

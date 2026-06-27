@@ -4,7 +4,7 @@
         x:Class="TimeTracker.Views.ManualTimeEntryDialog"
         x:DataType="vm:ManualTimeEntryViewModel"
         Title="{Binding Title}"
-        Width="360" Height="290"
+        Width="360" Height="340"
         CanResize="False"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False">
@@ -26,6 +26,9 @@
 
         <TextBlock Text="Description"/>
         <TextBox Text="{Binding Description}" PlaceholderText="What did you work on?"/>
+
+        <TextBlock Text="AI Time Saved (hours)"/>
+        <TextBox Text="{Binding AiTimeSavedHours}" PlaceholderText="0 or 0.5"/>
 
         <TextBlock x:Name="ErrorText"
                    Foreground="Red"

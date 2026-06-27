@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.EntityFrameworkCore;
 using TimeTracker.Data;
 using TimeTracker.Models;
 
@@ -11,6 +12,7 @@ public class TaskRepository
     {
         using var db = new AppDbContext();
         return db.ProjectTasks
+            .AsNoTracking()  // read-only — no need to track changes
             .Where(task => task.ProjectId == projectId && task.IsActive)
             .OrderBy(task => task.Name)
             .ToList();

@@ -7,9 +7,9 @@
         mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="600"
         x:Class="TimeTracker.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
-        Icon="/Assets/app-icon.png"
+        Icon="/Assets/app-icon.ico"
         Title="TimeTracker"
-        Width="960" Height="640">
+        Width="1080" Height="640">
 
     <Design.DataContext>
         <vm:MainWindowViewModel/>
@@ -138,12 +138,13 @@
                     </Grid>
 
                     <!-- Column headers — widths must match the DataTemplate Grid below -->
-                    <Grid DockPanel.Dock="Top" ColumnDefinitions="110,60,60,80,*" Margin="8,0,0,2">
+                    <Grid DockPanel.Dock="Top" ColumnDefinitions="110,60,60,80,*,70" Margin="8,0,0,2">
                         <TextBlock Grid.Column="0" Text="Date"        FontWeight="SemiBold"/>
                         <TextBlock Grid.Column="1" Text="Start"       FontWeight="SemiBold"/>
                         <TextBlock Grid.Column="2" Text="Stop"        FontWeight="SemiBold"/>
                         <TextBlock Grid.Column="3" Text="Duration"    FontWeight="SemiBold"/>
                         <TextBlock Grid.Column="4" Text="Description" FontWeight="SemiBold"/>
+                        <TextBlock Grid.Column="5" Text="AI Time"     FontWeight="SemiBold" TextAlignment="Right"/>
                     </Grid>
 
                     <!-- x:CompileBindings="False" on DataTemplate allows StringFormat -->
@@ -152,12 +153,13 @@
                              DoubleTapped="TimeEntriesList_DoubleTapped">
                         <ListBox.ItemTemplate>
                             <DataTemplate x:CompileBindings="False">
-                                <Grid ColumnDefinitions="110,60,60,80,*">
+                                <Grid ColumnDefinitions="110,60,60,80,*,70">
                                     <TextBlock Grid.Column="0" Text="{Binding StartedAtLocal, StringFormat={}{0:dd-MM-yyyy}}" Padding="0,2"/>
                                     <TextBlock Grid.Column="1" Text="{Binding StartedAtLocal, StringFormat={}{0:HH:mm}}"      Padding="0,2"/>
                                     <TextBlock Grid.Column="2" Text="{Binding StoppedAtLocal, StringFormat={}{0:HH:mm}}"      Padding="0,2"/>
-                                    <TextBlock Grid.Column="3" Text="{Binding Duration,       StringFormat={}{0:hh\\:mm}}"    Padding="0,2"/>
+                                    <TextBlock Grid.Column="3" Text="{Binding DurationText}"                                   Padding="0,2"/>
                                     <TextBlock Grid.Column="4" Text="{Binding Description}"                                   Padding="0,2"/>
+                                    <TextBlock Grid.Column="5" Text="{Binding AiTimeSavedHours, StringFormat={}{0:F1}}" Padding="0,2" TextAlignment="Right"/>
                                 </Grid>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
@@ -172,10 +174,10 @@
         <Border Grid.Row="2" Background="{DynamicResource StatusBarBrush}" Padding="12,6">
             <StackPanel Orientation="Horizontal" Spacing="8">
                 <TextBlock Foreground="{DynamicResource BarForegroundBrush}" Text="Project:"/>
-                <TextBlock Foreground="{DynamicResource BarAccentBrush}" Text="{Binding SelectedProject.Name, FallbackValue='—'}"/>
+                <TextBlock Foreground="{DynamicResource BarAccentBrush}" Text="{Binding SelectedProjectName}"/>
                 <TextBlock Foreground="{DynamicResource BarMutedBrush}" Text="|"/>
                 <TextBlock Foreground="{DynamicResource BarForegroundBrush}" Text="Task:"/>
-                <TextBlock Foreground="{DynamicResource BarAccentBrush}" Text="{Binding SelectedTask.Name, FallbackValue='—'}"/>
+                <TextBlock Foreground="{DynamicResource BarAccentBrush}" Text="{Binding SelectedTaskName}"/>
             </StackPanel>
         </Border>
 

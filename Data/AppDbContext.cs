@@ -7,6 +7,19 @@ namespace TimeTracker.Data;
 
 public class AppDbContext : DbContext
 {
+    // Computed once at class load — the path never changes during the app's lifetime.
+    // This avoids repeating the Environment/Path calls and CreateDirectory on every query.
+    private static readonly string DbPath = BuildDbPath();
+
+    private static string BuildDbPath()
+    {
+        string folder = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "TimeTracker");
+        Directory.CreateDirectory(folder);
+        return Path.Combine(folder, "timetracker.db");
+    }
+
     // Each DbSet maps to one table in the SQLite database
     public DbSet<Project> Projects => Set<Project>();
     public DbSet<ProjectTask> ProjectTasks => Set<ProjectTask>();
@@ -14,12 +27,6 @@ public class AppDbContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        // Store the database file in the OS app-data folder, not next to the executable
-        string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        string dbFolder = Path.Combine(appData, "TimeTracker");
-        Directory.CreateDirectory(dbFolder); // creates the folder if it doesn't exist yet
-        string dbPath = Path.Combine(dbFolder, "timetracker.db");
-
-        optionsBuilder.UseSqlite($"Data Source={dbPath}");
+        optionsBuilder.UseSqlite($"Data Source={DbPath}");
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using TimeTracker.Models;
 
 namespace TimeTracker.ViewModels;
@@ -40,6 +41,13 @@ public class ManualTimeEntryViewModel : ViewModelBase
         set => SetProperty(ref _description, value);
     }
 
+    private string _aiTimeSavedHours = "0";
+    public string AiTimeSavedHours
+    {
+        get => _aiTimeSavedHours;
+        set => SetProperty(ref _aiTimeSavedHours, value);
+    }
+
     // Default constructor — used for adding a new entry
     public ManualTimeEntryViewModel() { }
 
@@ -55,6 +63,7 @@ public class ManualTimeEntryViewModel : ViewModelBase
         StartTime   = localStart.ToString("HH:mm:ss");
         EndTime     = entry.StoppedAt?.ToLocalTime().ToString("HH:mm:ss") ?? string.Empty;
         Description = entry.Description;
+        AiTimeSavedHours = (entry.AiTimeSavedHours ?? 0).ToString();
     }
 
     // Creates a brand-new TimeEntry — used when adding
@@ -62,13 +71,15 @@ public class ManualTimeEntryViewModel : ViewModelBase
     {
         entry = null;
         if (!TryParseRange(out var start, out var end)) return false;
+        if (!TryParseAiTime(out var aiHours)) return false;
 
         entry = new TimeEntry
         {
             ProjectTaskId = taskId,
             Description   = Description,
             StartedAt     = start,
-            StoppedAt     = end
+            StoppedAt     = end,
+            AiTimeSavedHours = aiHours
         };
         return true;
     }
@@ -77,10 +88,12 @@ public class ManualTimeEntryViewModel : ViewModelBase
     public bool TryApplyToEntry(TimeEntry existing)
     {
         if (!TryParseRange(out var start, out var end)) return false;
+        if (!TryParseAiTime(out var aiHours)) return false;
 
         existing.StartedAt   = start;
         existing.StoppedAt   = end;
         existing.Description = Description;
+        existing.AiTimeSavedHours = aiHours;
         return true;
     }
 
@@ -93,7 +106,24 @@ public class ManualTimeEntryViewModel : ViewModelBase
             return "End time is not valid. Use HH:mm or HH:mm:ss (e.g. 17:30).";
         if (endSpan < startSpan)
             return "End time must be later than start time.";
+        if (!TryParseAiTime(out _))
+            return "AI time must be a valid decimal number (e.g. 0, 0.5, 1.25).";
         return null;
+    }
+
+    private bool TryParseAiTime(out decimal? aiHours)
+    {
+        aiHours = null;
+        if (string.IsNullOrWhiteSpace(AiTimeSavedHours) || AiTimeSavedHours == "0")
+            return true;  // Empty or 0 is allowed
+        
+        // Try to parse using current culture's decimal separator
+        if (decimal.TryParse(AiTimeSavedHours, NumberStyles.AllowDecimalPoint, CultureInfo.CurrentCulture, out var value) && value >= 0)
+        {
+            aiHours = value;
+            return true;
+        }
+        return false;
     }
 
     private bool TryParseRange(out DateTime start, out DateTime end)

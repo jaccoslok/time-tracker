@@ -14,19 +14,30 @@ public class TimeEntryRepository
     {
         using var db = new AppDbContext();
         return db.TimeEntries
+            .AsNoTracking()  // read-only — no need to track changes
             .Include(entry => entry.ProjectTask)
             .ThenInclude(task => task.Project)
             .Where(entry => entry.StoppedAt.HasValue
                          && entry.StartedAt >= from
                          && entry.StartedAt < to)
-            .OrderBy(entry => entry.StartedAt)
+            .OrderByDescending(entry => entry.StartedAt)  // newest first — pushed to DB
+            .ThenBy(entry => entry.ProjectTask.Project.Name)
+            .ThenBy(entry => entry.ProjectTask.Name)
             .ToList();
+    }
+
+    // Returns a tracked entity (no AsNoTracking) so it can be modified and saved via Update()
+    public TimeEntry? GetById(int id)
+    {
+        using var db = new AppDbContext();
+        return db.TimeEntries.Find(id);
     }
 
     public List<TimeEntry> GetAllForTask(int taskId)
     {
         using var db = new AppDbContext();
         return db.TimeEntries
+            .AsNoTracking()  // read-only — no need to track changes
             .Where(entry => entry.ProjectTaskId == taskId)
             .OrderByDescending(entry => entry.StartedAt)
             .ToList();

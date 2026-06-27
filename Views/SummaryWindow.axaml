@@ -4,7 +4,7 @@
         x:Class="TimeTracker.Views.SummaryWindow"
         x:DataType="vm:SummaryViewModel"
         Title="Summary"
-        Width="900" Height="520"
+        Width="1200" Height="520"
         WindowStartupLocation="CenterScreen">
 
     <Design.DataContext>
@@ -22,6 +22,7 @@
                     <TextBlock Text="To" VerticalAlignment="Center"/>
                     <DatePicker SelectedDate="{Binding ToDate}"/>
                     <Button Content="Today" Click="TodayButton_Click"/>
+                    <Button Content="Export to Excel" Click="ExportExcelButton_Click"/>
                 </StackPanel>
                 <TextBlock x:Name="CopiedLabel"
                            Grid.Column="1"
@@ -37,21 +38,22 @@
         <DockPanel Grid.Row="1" Margin="8">
 
             <!-- Column headers -->
-            <Grid DockPanel.Dock="Top" ColumnDefinitions="90,120,120,*,60,60,70" Margin="8,0,0,2">
-                <TextBlock Grid.Column="0" Text="Date"        FontWeight="SemiBold"/>
+            <Grid DockPanel.Dock="Top" ColumnDefinitions="100,130,130,*,70,70,80,80,80" Margin="8,0,0,2">
+                <TextBlock Grid.Column="0" Text="Date"        FontWeight="SemiBold" TextAlignment="Right" Margin="0,0,8,0"/>
                 <TextBlock Grid.Column="1" Text="Project"     FontWeight="SemiBold"/>
                 <TextBlock Grid.Column="2" Text="Task"        FontWeight="SemiBold"/>
                 <TextBlock Grid.Column="3" Text="Description" FontWeight="SemiBold"/>
-                <TextBlock Grid.Column="4" Text="Start"       FontWeight="SemiBold"/>
-                <TextBlock Grid.Column="5" Text="Stop"        FontWeight="SemiBold"/>
-                <TextBlock Grid.Column="6" Text="Duration"    FontWeight="SemiBold"/>
+                <TextBlock Grid.Column="4" Text="Start"       FontWeight="SemiBold" TextAlignment="Right"/>
+                <TextBlock Grid.Column="5" Text="Stop"        FontWeight="SemiBold" TextAlignment="Right"/>
+                <TextBlock Grid.Column="6" Text="Duration"    FontWeight="SemiBold" TextAlignment="Right"/>
+                <TextBlock Grid.Column="7" Text="AI Time"     FontWeight="SemiBold" TextAlignment="Right"/>
             </Grid>
 
             <ListBox ItemsSource="{Binding Rows}">
                 <ListBox.ItemTemplate>
                     <DataTemplate x:DataType="vm:SummaryRow">
-                        <Grid ColumnDefinitions="90,120,120,*,60,60,70">
-                            <TextBlock Grid.Column="0" Text="{Binding Date}"        Padding="0,2"/>
+                        <Grid ColumnDefinitions="100,130,130,*,70,70,80,80,80" DoubleTapped="RowGrid_DoubleTapped">
+                            <TextBlock Grid.Column="0" Text="{Binding Date}"        Padding="0,2" TextAlignment="Right" Margin="0,0,8,0"/>
                             <TextBlock Grid.Column="1" Text="{Binding ProjectName}" Padding="0,2"/>
                             <TextBlock Grid.Column="2" Text="{Binding TaskName}"    Padding="0,2"/>
                             <TextBlock Grid.Column="3" Text="{Binding Description}" Padding="0,2" DoubleTapped="DescriptionText_DoubleTapped">
@@ -61,9 +63,16 @@
                                     </ContextMenu>
                                 </TextBlock.ContextMenu>
                             </TextBlock>
-                            <TextBlock Grid.Column="4" Text="{Binding StartTime}"   Padding="0,2"/>
-                            <TextBlock Grid.Column="5" Text="{Binding StopTime}"    Padding="0,2"/>
-                            <TextBlock Grid.Column="6" Text="{Binding Duration}"    Padding="0,2"/>
+                            <TextBlock Grid.Column="4" Text="{Binding StartTime}"   Padding="0,2" TextAlignment="Right"/>
+                            <TextBlock Grid.Column="5" Text="{Binding StopTime}"    Padding="0,2" TextAlignment="Right"/>
+                            <TextBlock Grid.Column="6" Text="{Binding Duration}"    Padding="0,2" TextAlignment="Right"/>
+                            <TextBlock Grid.Column="7" Text="{Binding AiTimeSavedHours}" Padding="0,2" TextAlignment="Right"/>
+                            <StackPanel Grid.Column="8" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Right">
+                                <Button Content="✏" FontSize="11" Padding="4,1" Click="EditEntryButton_Click"
+                                        ToolTip.Tip="Edit entry"/>
+                                <Button Content="🗑" FontSize="11" Padding="4,1" Click="DeleteEntryButton_Click"
+                                        ToolTip.Tip="Delete entry"/>
+                            </StackPanel>
                         </Grid>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
@@ -75,6 +84,9 @@
             <StackPanel Orientation="Horizontal" Spacing="8">
                 <TextBlock Foreground="{DynamicResource BarForegroundBrush}" Text="Total hours:"/>
                 <TextBlock Foreground="{DynamicResource BarAccentBrush}" Text="{Binding TotalHours, StringFormat={}{0:F1}}"/>
+                <TextBlock Foreground="{DynamicResource BarMutedBrush}" Text="|"/>
+                <TextBlock Foreground="{DynamicResource BarForegroundBrush}" Text="Timed saved by AI:"/>
+                <TextBlock Foreground="{DynamicResource BarAccentBrush}" Text="{Binding TotalAiTimeSaved, StringFormat={}{0:F1}}"/>
             </StackPanel>
         </Border>
 
