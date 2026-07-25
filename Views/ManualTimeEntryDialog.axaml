@@ -4,7 +4,7 @@
         x:Class="TimeTracker.Views.ManualTimeEntryDialog"
         x:DataType="vm:ManualTimeEntryViewModel"
         Title="{Binding Title}"
-        Width="360" Height="340"
+        Width="360" Height="370"
         CanResize="False"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False">
@@ -35,9 +35,9 @@
                    TextWrapping="Wrap"
                    MinHeight="20"/>
 
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,6,0,0">
-            <Button Content="Cancel" Click="CancelButton_Click" Width="80"/>
-            <Button Content="OK"     Click="OkButton_Click"     Width="80"/>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="12" Margin="0,12,0,0">
+            <Button Content="Cancel" Click="CancelButton_Click" Width="90" Height="34"/>
+            <Button Content="OK"     Click="OkButton_Click"     Width="90" Height="34"/>
         </StackPanel>
     </StackPanel>
 </Window>
