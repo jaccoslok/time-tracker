@@ -185,7 +185,11 @@
             </DockPanel>
 
             <!-- ── Activities / Charts tabs ───────────────────────── -->
-            <TabControl Grid.Row="4" Grid.Column="2" Grid.ColumnSpan="3" Padding="0">
+            <!-- Two layers in one Grid cell: the rounded panel starts 13px down (half the
+                 26px tab height), so the centred tab pills sit on its top edge -->
+            <Grid Grid.Row="4" Grid.Column="2" Grid.ColumnSpan="3">
+            <Border Classes="tabpanel" Margin="0,13,0,0"/>
+            <TabControl Classes="pills" Padding="14,10,14,14">
 
                 <TabItem Header="Activities">
                     <DockPanel Margin="0,6,0,0">
@@ -293,6 +297,7 @@
                     </DockPanel>
                 </TabItem>
             </TabControl>
+            </Grid>
         </Grid>
     </Grid>
 </Window>

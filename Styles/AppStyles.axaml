@@ -6,27 +6,106 @@
 
             <!-- ── Theme-aware palette ────────────────────────────────────────────
                  Each key exists in both dictionaries; DynamicResource picks the one
-                 matching the current light/dark mode and updates when it changes.  -->
+                 matching the current light/dark mode and updates when it changes.
+
+                 Keys like "ButtonBackground" are Fluent theme keys: defining them here
+                 overrides the colours of Fluent's built-in controls, because this style
+                 file comes after <FluentTheme/> in App.axaml and later resources win.   -->
             <ResourceDictionary.ThemeDictionaries>
 
                 <ResourceDictionary x:Key="Light">
-                    <SolidColorBrush x:Key="AccentBrush"  Color="#2F6FEB"/>
-                    <SolidColorBrush x:Key="MutedBrush"   Color="#6B7280"/>
-                    <SolidColorBrush x:Key="CardBrush"    Color="#F1F3F6"/>
-                    <SolidColorBrush x:Key="DividerBrush" Color="#D9DDE3"/>
-                    <SolidColorBrush x:Key="HeaderBrush"  Color="#F6F7F9"/>
-                    <SolidColorBrush x:Key="BelowBrush"   Color="#DC2626"/>
-                    <SolidColorBrush x:Key="OnTargetBrush" Color="#16A34A"/>
+                    <!-- App palette -->
+                    <SolidColorBrush x:Key="WindowBrush"    Color="#FFFFFF"/>
+                    <SolidColorBrush x:Key="ListBrush"      Color="#FFFFFF"/>
+                    <SolidColorBrush x:Key="AccentBrush"    Color="#2F6FEB"/>
+                    <SolidColorBrush x:Key="MutedBrush"     Color="#6B7280"/>
+                    <SolidColorBrush x:Key="CardBrush"      Color="#F1F3F6"/>
+                    <SolidColorBrush x:Key="DividerBrush"   Color="#D9DDE3"/>
+                    <SolidColorBrush x:Key="HeaderBrush"    Color="#F6F7F9"/>
+                    <SolidColorBrush x:Key="TabPanelBrush"  Color="#F6F7F9"/>
+                    <SolidColorBrush x:Key="BelowBrush"     Color="#DC2626"/>
+                    <SolidColorBrush x:Key="OnTargetBrush"  Color="#16A34A"/>
+
+                    <!-- Fluent: tabs as pills, the selected one orange like the Xojo app -->
+                    <SolidColorBrush x:Key="TabItemHeaderBackgroundSelected"             Color="#F88520"/>
+                    <SolidColorBrush x:Key="TabItemHeaderBackgroundSelectedPointerOver"  Color="#F99536"/>
+                    <SolidColorBrush x:Key="TabItemHeaderBackgroundSelectedPressed"      Color="#E07612"/>
+                    <SolidColorBrush x:Key="TabItemHeaderBackgroundUnselected"           Color="#E6E8EC"/>
+                    <SolidColorBrush x:Key="TabItemHeaderBackgroundUnselectedPointerOver" Color="#DADDE2"/>
+                    <SolidColorBrush x:Key="TabItemHeaderBackgroundUnselectedPressed"    Color="#CED2D8"/>
+                    <SolidColorBrush x:Key="TabItemHeaderForegroundSelected"             Color="#FFFFFF"/>
+                    <SolidColorBrush x:Key="TabItemHeaderForegroundSelectedPointerOver"  Color="#FFFFFF"/>
+                    <SolidColorBrush x:Key="TabItemHeaderForegroundSelectedPressed"      Color="#FFFFFF"/>
+                    <SolidColorBrush x:Key="TabItemHeaderSelectedPipeFill"               Color="Transparent"/>
                 </ResourceDictionary>
 
+                <!-- Colours measured from the Xojo TimeTracker3 app in dark mode -->
                 <ResourceDictionary x:Key="Dark">
-                    <SolidColorBrush x:Key="AccentBrush"  Color="#5B9BFF"/>
-                    <SolidColorBrush x:Key="MutedBrush"   Color="#9CA3AF"/>
-                    <SolidColorBrush x:Key="CardBrush"    Color="#2B2F36"/>
-                    <SolidColorBrush x:Key="DividerBrush" Color="#3A3F47"/>
-                    <SolidColorBrush x:Key="HeaderBrush"  Color="#25282E"/>
-                    <SolidColorBrush x:Key="BelowBrush"   Color="#F87171"/>
-                    <SolidColorBrush x:Key="OnTargetBrush" Color="#4ADE80"/>
+                    <!-- App palette -->
+                    <SolidColorBrush x:Key="WindowBrush"    Color="#20242F"/>
+                    <SolidColorBrush x:Key="ListBrush"      Color="#1D1D1D"/>
+                    <SolidColorBrush x:Key="AccentBrush"    Color="#5B9BFF"/>
+                    <SolidColorBrush x:Key="MutedBrush"     Color="#9A9DA4"/>
+                    <SolidColorBrush x:Key="CardBrush"      Color="#2F333D"/>
+                    <SolidColorBrush x:Key="DividerBrush"   Color="#3C3C3C"/>
+                    <SolidColorBrush x:Key="HeaderBrush"    Color="#2A2E39"/>
+                    <SolidColorBrush x:Key="TabPanelBrush"  Color="#272B36"/>
+                    <SolidColorBrush x:Key="BelowBrush"     Color="#F87171"/>
+                    <SolidColorBrush x:Key="OnTargetBrush"  Color="#4ADE80"/>
+
+                    <!-- Fluent: buttons -->
+                    <SolidColorBrush x:Key="ButtonBackground"             Color="#30343F"/>
+                    <SolidColorBrush x:Key="ButtonBackgroundPointerOver"  Color="#3A3E49"/>
+                    <SolidColorBrush x:Key="ButtonBackgroundPressed"      Color="#444852"/>
+                    <SolidColorBrush x:Key="ButtonBackgroundDisabled"     Color="#282C37"/>
+                    <SolidColorBrush x:Key="ButtonForeground"             Color="#DFE0E2"/>
+                    <SolidColorBrush x:Key="ButtonForegroundPointerOver"  Color="#FFFFFF"/>
+                    <SolidColorBrush x:Key="ButtonForegroundPressed"      Color="#FFFFFF"/>
+                    <SolidColorBrush x:Key="ButtonForegroundDisabled"     Color="#5D6068"/>
+                    <SolidColorBrush x:Key="ButtonBorderBrush"            Color="Transparent"/>
+                    <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="Transparent"/>
+                    <SolidColorBrush x:Key="ButtonBorderBrushPressed"     Color="Transparent"/>
+                    <SolidColorBrush x:Key="ButtonBorderBrushDisabled"    Color="Transparent"/>
+
+                    <!-- Fluent: drop-downs (the timer's project/task pickers) -->
+                    <SolidColorBrush x:Key="ComboBoxBackground"             Color="#30343F"/>
+                    <SolidColorBrush x:Key="ComboBoxBackgroundPointerOver"  Color="#3A3E49"/>
+                    <SolidColorBrush x:Key="ComboBoxBackgroundPressed"      Color="#444852"/>
+                    <SolidColorBrush x:Key="ComboBoxBackgroundDisabled"     Color="#282C37"/>
+                    <SolidColorBrush x:Key="ComboBoxBorderBrush"            Color="Transparent"/>
+                    <SolidColorBrush x:Key="ComboBoxBorderBrushPointerOver" Color="Transparent"/>
+                    <SolidColorBrush x:Key="ComboBoxBorderBrushPressed"     Color="Transparent"/>
+                    <SolidColorBrush x:Key="ComboBoxBorderBrushDisabled"    Color="Transparent"/>
+
+                    <!-- Fluent: text fields -->
+                    <SolidColorBrush x:Key="TextControlBackground"            Color="#2E2E2E"/>
+                    <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="#333333"/>
+                    <SolidColorBrush x:Key="TextControlBackgroundFocused"     Color="#2E2E2E"/>
+                    <SolidColorBrush x:Key="TextControlBackgroundDisabled"    Color="#262626"/>
+                    <SolidColorBrush x:Key="TextControlBorderBrush"           Color="#3C3C3C"/>
+                    <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="#4A4A4A"/>
+
+                    <!-- Fluent: list rows. Neutral grey selection instead of the blue accent -->
+                    <SolidColorBrush x:Key="SystemControlHighlightListAccentLowBrush"    Color="#464646"/>
+                    <SolidColorBrush x:Key="SystemControlHighlightListAccentMediumBrush" Color="#4E4E4E"/>
+                    <SolidColorBrush x:Key="SystemControlHighlightListAccentHighBrush"   Color="#555555"/>
+                    <SolidColorBrush x:Key="SystemControlHighlightListLowBrush"          Color="#2A2A2A"/>
+                    <SolidColorBrush x:Key="SystemControlHighlightListMediumBrush"       Color="#333333"/>
+
+                    <!-- Fluent: tabs as pills, the selected one orange -->
+                    <SolidColorBrush x:Key="TabItemHeaderBackgroundSelected"             Color="#F88520"/>
+                    <SolidColorBrush x:Key="TabItemHeaderBackgroundSelectedPointerOver"  Color="#F99536"/>
+                    <SolidColorBrush x:Key="TabItemHeaderBackgroundSelectedPressed"      Color="#E07612"/>
+                    <SolidColorBrush x:Key="TabItemHeaderBackgroundUnselected"           Color="#30343F"/>
+                    <SolidColorBrush x:Key="TabItemHeaderBackgroundUnselectedPointerOver" Color="#3A3E49"/>
+                    <SolidColorBrush x:Key="TabItemHeaderBackgroundUnselectedPressed"    Color="#444852"/>
+                    <SolidColorBrush x:Key="TabItemHeaderForegroundSelected"             Color="#FFFFFF"/>
+                    <SolidColorBrush x:Key="TabItemHeaderForegroundSelectedPointerOver"  Color="#FFFFFF"/>
+                    <SolidColorBrush x:Key="TabItemHeaderForegroundSelectedPressed"      Color="#FFFFFF"/>
+                    <SolidColorBrush x:Key="TabItemHeaderForegroundUnselected"           Color="#DFE0E2"/>
+                    <SolidColorBrush x:Key="TabItemHeaderForegroundUnselectedPointerOver" Color="#FFFFFF"/>
+                    <SolidColorBrush x:Key="TabItemHeaderForegroundUnselectedPressed"    Color="#FFFFFF"/>
+                    <SolidColorBrush x:Key="TabItemHeaderSelectedPipeFill"               Color="Transparent"/>
                 </ResourceDictionary>
 
             </ResourceDictionary.ThemeDictionaries>
@@ -38,11 +117,24 @@
 
     <!-- ── Base control styles ─────────────────────────────────────────────── -->
 
+    <!-- Applies to MainWindow and every dialog (they all derive from Window) -->
+    <Style Selector="Window">
+        <Setter Property="Background" Value="{DynamicResource WindowBrush}"/>
+    </Style>
+
     <Style Selector="Button">
         <Setter Property="Padding"      Value="10,4"/>
         <Setter Property="FontSize"     Value="{StaticResource AppFontSize}"/>
-        <Setter Property="CornerRadius" Value="4"/>
+        <Setter Property="CornerRadius" Value="5"/>
         <Setter Property="HorizontalContentAlignment" Value="Center"/>
+    </Style>
+
+    <Style Selector="ComboBox">
+        <Setter Property="CornerRadius" Value="5"/>
+    </Style>
+
+    <Style Selector="TextBox">
+        <Setter Property="CornerRadius" Value="5"/>
     </Style>
 
     <Style Selector="TextBlock">
@@ -93,6 +185,7 @@
     <!-- ── Tables (ListBox with a column header row) ───────────────────────── -->
 
     <Style Selector="Border.table">
+        <Setter Property="Background"      Value="{DynamicResource ListBrush}"/>
         <Setter Property="BorderBrush"     Value="{DynamicResource DividerBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <!-- Same radius as Border.card; ClipToBounds clips the header and the
@@ -136,12 +229,36 @@
         <Setter Property="Foreground" Value="{DynamicResource MutedBrush}"/>
     </Style>
 
-    <!-- ── Tabs and chart ──────────────────────────────────────────────────── -->
+    <!-- ── Tab group (Activities / Charts) ─────────────────────────────────────
+         Like the Xojo tab panel: a rounded panel with the tabs as centred pills
+         sitting on its top edge. "/template/" reaches inside the control's template. -->
 
-    <Style Selector="TabItem">
-        <Setter Property="FontSize"  Value="14"/>
-        <Setter Property="MinHeight" Value="34"/>
-        <Setter Property="Padding"   Value="12,0"/>
+    <Style Selector="Border.tabpanel">
+        <Setter Property="Background"      Value="{DynamicResource TabPanelBrush}"/>
+        <Setter Property="BorderBrush"     Value="{DynamicResource DividerBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius"    Value="8"/>
+    </Style>
+
+    <Style Selector="TabControl.pills /template/ ItemsPresenter#PART_ItemsPresenter">
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+    </Style>
+
+    <Style Selector="TabControl.pills TabItem">
+        <Setter Property="FontSize"     Value="13"/>
+        <Setter Property="MinHeight"    Value="26"/>
+        <Setter Property="Height"       Value="26"/>
+        <Setter Property="Padding"      Value="14,0"/>
+        <Setter Property="Margin"       Value="2,0"/>
+        <Setter Property="CornerRadius" Value="6"/>
+    </Style>
+
+    <Style Selector="TabControl.pills TabItem /template/ Border#PART_LayoutRoot">
+        <Setter Property="CornerRadius" Value="6"/>
+    </Style>
+
+    <Style Selector="TabControl.pills TabItem /template/ Border#PART_SelectedPipe">
+        <Setter Property="IsVisible" Value="False"/>
     </Style>
 
     <!-- A ProgressBar from 0 to Maximum makes a simple horizontal bar -->
