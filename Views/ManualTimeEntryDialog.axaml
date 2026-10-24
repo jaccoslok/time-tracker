@@ -1,15 +1,37 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:TimeTracker.ViewModels"
+        xmlns:models="using:TimeTracker.Models"
         x:Class="TimeTracker.Views.ManualTimeEntryDialog"
         x:DataType="vm:ManualTimeEntryViewModel"
         Title="{Binding Title}"
-        Width="360" Height="370"
+        Width="380"
+        SizeToContent="Height"
         CanResize="False"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False">
 
     <StackPanel Margin="16" Spacing="10">
+        <TextBlock Text="Project"/>
+        <ComboBox ItemsSource="{Binding Projects}" SelectedItem="{Binding SelectedProject}"
+                  HorizontalAlignment="Stretch">
+            <ComboBox.ItemTemplate>
+                <DataTemplate x:DataType="models:Project">
+                    <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis"/>
+                </DataTemplate>
+            </ComboBox.ItemTemplate>
+        </ComboBox>
+
+        <TextBlock Text="Task"/>
+        <ComboBox ItemsSource="{Binding Tasks}" SelectedItem="{Binding SelectedTask}"
+                  HorizontalAlignment="Stretch" PlaceholderText="This project has no tasks">
+            <ComboBox.ItemTemplate>
+                <DataTemplate x:DataType="models:ProjectTask">
+                    <TextBlock Text="{Binding Name}"/>
+                </DataTemplate>
+            </ComboBox.ItemTemplate>
+        </ComboBox>
+
         <TextBlock Text="Date"/>
         <DatePicker SelectedDate="{Binding Date}"/>
 
@@ -24,7 +46,7 @@
             </StackPanel>
         </Grid>
 
-        <TextBlock Text="Description"/>
+        <TextBlock Text="Remarks"/>
         <TextBox Text="{Binding Description}" PlaceholderText="What did you work on?"/>
 
         <TextBlock Text="AI Time Saved (hours)"/>
@@ -35,9 +57,9 @@
                    TextWrapping="Wrap"
                    MinHeight="20"/>
 
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="12" Margin="0,12,0,0">
-            <Button Content="Cancel" Click="CancelButton_Click" Width="90" Height="34"/>
-            <Button Content="OK"     Click="OkButton_Click"     Width="90" Height="34"/>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="12">
+            <Button Content="Cancel" Click="CancelButton_Click" Width="90"/>
+            <Button Content="OK"     Click="OkButton_Click"     Width="90" IsDefault="True"/>
         </StackPanel>
     </StackPanel>
 </Window>

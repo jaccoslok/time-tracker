@@ -4,182 +4,295 @@
         xmlns:models="using:TimeTracker.Models"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="600"
+        mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="720"
         x:Class="TimeTracker.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/app-icon.ico"
-        Title="TimeTracker"
-        Width="1080" Height="640">
+        Title="{Binding WindowTitle}"
+        Width="1100" Height="720"
+        MinWidth="1000" MinHeight="680">
 
     <Design.DataContext>
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
-    <Grid RowDefinitions="Auto,*,Auto">
+    <Grid RowDefinitions="Auto,*">
 
-        <!-- TOP BAR -->
-        <Border Grid.Row="0" Background="{DynamicResource AppBarBrush}" Padding="12,8">
-            <Grid ColumnDefinitions="*,Auto">
-                <StackPanel Grid.Column="0" Orientation="Horizontal">
-                    <Button Classes="topbar" Content="Summary" Click="SummaryButton_Click"/>
+        <!-- ═══ TIMER BAR ═══════════════════════════════════════════════════ -->
+        <Border Grid.Row="0" Padding="20,14"
+                BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,0,0,1">
+            <Grid ColumnDefinitions="230,12,230,12,*,20,Auto" RowDefinitions="Auto,10,Auto">
+
+                <!-- Paused: the pickers are locked so Resume continues the same task -->
+                <ComboBox Grid.Column="0" HorizontalAlignment="Stretch"
+                          ItemsSource="{Binding TimerProjects}" SelectedItem="{Binding TimerProject}"
+                          PlaceholderText="Choose a project…" IsEnabled="{Binding !IsTimerPaused}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate x:DataType="models:Project">
+                            <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis"/>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+
+                <ComboBox Grid.Column="2" HorizontalAlignment="Stretch"
+                          ItemsSource="{Binding TimerTasks}" SelectedItem="{Binding TimerTask}"
+                          PlaceholderText="Choose a task…" IsEnabled="{Binding !IsTimerPaused}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate x:DataType="models:ProjectTask">
+                            <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"/>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+
+                <TextBox Grid.Column="4" Text="{Binding Remarks}" PlaceholderText="What are you working on?"/>
+
+                <TextBlock Grid.Column="6" Grid.RowSpan="3" Classes="clock"
+                           Text="{Binding ElapsedTime}" MinWidth="180" TextAlignment="Right"
+                           VerticalAlignment="Center"/>
+
+                <StackPanel Grid.Row="2" Grid.ColumnSpan="5" Orientation="Horizontal" Spacing="8">
+                    <Button Content="{Binding StartButtonText}" Command="{Binding StartTimerCommand}" Width="90"/>
+                    <Button Content="Pause" Command="{Binding PauseTimerCommand}" Width="90"/>
+                    <Button Content="Stop"  Command="{Binding StopTimerCommand}"  Width="90"/>
+                    <TextBlock Text="{Binding TimerStatus}" Classes="muted" Margin="8,0,0,0"
+                               VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                 </StackPanel>
-                <Button Grid.Column="1" Classes="topbar" Content="About" Click="AboutButton_Click"/>
             </Grid>
         </Border>
 
-        <!-- MAIN CONTENT -->
-        <Grid Grid.Row="1" ColumnDefinitions="260,4,*">
+        <!-- ═══ CONTENT ═════════════════════════════════════════════════════
+             Columns: left (period + summary) | projects | tasks
+             Rows:    lists on top | tabs at the bottom                         -->
+        <Grid Grid.Row="1" Margin="20,12,20,20"
+              ColumnDefinitions="200,14,*,14,*" RowDefinitions="Auto,6,210,14,*">
 
-            <!-- LEFT COLUMN: Projects (top) + Tasks (bottom) -->
-            <Grid Grid.Column="0" RowDefinitions="*,4,*">
+            <!-- ── Period ─────────────────────────────────────────── -->
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="PERIOD" Classes="section" Height="24"/>
+            <Border Grid.Row="2" Grid.Column="0" Classes="table">
+                <ListBox Classes="table" ItemsSource="{Binding PeriodNames}"
+                         SelectedIndex="{Binding SelectedPeriodIndex}"/>
+            </Border>
 
-                <!-- Projects panel -->
-                <DockPanel Grid.Row="0" Margin="8">
-                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,6">
-                        <TextBlock Text="Projects" FontWeight="Bold" VerticalAlignment="Center"/>
-                        <Button Content="+ Add" Click="AddProjectButton_Click"/>
-                    </StackPanel>
-                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="4" Margin="0,4,0,0">
-                        <Button Content="Edit"
-                                Click="EditProjectButton_Click"
-                                IsEnabled="{Binding SelectedProject, Converter={x:Static ObjectConverters.IsNotNull}}"/>
-                        <Button Content="Delete"
-                                Click="DeleteProjectButton_Click"
-                                IsEnabled="{Binding SelectedProject, Converter={x:Static ObjectConverters.IsNotNull}}"/>
-                    </StackPanel>
-                    <ListBox ItemsSource="{Binding Projects}" SelectedItem="{Binding SelectedProject}"
-                             DoubleTapped="ProjectsList_DoubleTapped">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate x:DataType="models:Project">
-                                <TextBlock Text="{Binding Name}" Padding="4,2"/>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-                </DockPanel>
-
-                <!-- Horizontal divider between projects and tasks -->
-                <Border Grid.Row="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
-
-                <!-- Tasks panel -->
-                <DockPanel Grid.Row="2" Margin="8">
-                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,6">
-                        <TextBlock Text="Tasks" FontWeight="Bold" VerticalAlignment="Center"/>
-                        <Button Content="+ Add"
-                                Click="AddTaskButton_Click"
-                                IsEnabled="{Binding SelectedProject, Converter={x:Static ObjectConverters.IsNotNull}}"/>
-                    </StackPanel>
-                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="4" Margin="0,4,0,0">
-                        <Button Content="Edit"
-                                Click="EditTaskButton_Click"
-                                IsEnabled="{Binding SelectedTask, Converter={x:Static ObjectConverters.IsNotNull}}"/>
-                        <Button Content="Delete"
-                                Click="DeleteTaskButton_Click"
-                                IsEnabled="{Binding SelectedTask, Converter={x:Static ObjectConverters.IsNotNull}}"/>
-                    </StackPanel>
-                    <ListBox ItemsSource="{Binding Tasks}" SelectedItem="{Binding SelectedTask}"
-                             DoubleTapped="TasksList_DoubleTapped">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate x:DataType="models:ProjectTask">
-                                <TextBlock Text="{Binding Name}" Padding="4,2"/>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-                </DockPanel>
-
+            <!-- ── Projects ───────────────────────────────────────── -->
+            <Grid Grid.Row="0" Grid.Column="2" ColumnDefinitions="*,Auto">
+                <TextBlock Text="PROJECTS" Classes="section"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                    <Button Classes="small" Content="+" Click="AddProjectButton_Click"
+                            ToolTip.Tip="New project"/>
+                    <Button Classes="small" Content="Edit…" Click="EditProjectButton_Click"
+                            IsEnabled="{Binding SelectedProject, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+                    <Button Classes="small" Content="−" Click="DeleteProjectButton_Click"
+                            ToolTip.Tip="Delete project"
+                            IsEnabled="{Binding SelectedProject, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+                </StackPanel>
             </Grid>
 
-            <!-- Vertical divider -->
-            <Border Grid.Column="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
-
-            <!-- RIGHT COLUMN: Timer + Time log -->
-            <Grid Grid.Column="2" RowDefinitions="Auto,4,*">
-
-                <!-- TIMER PANEL -->
-                <Border Grid.Row="0" Padding="16,12">
-                    <StackPanel Spacing="8">
-                        <TextBlock Text="{Binding TimerTaskName}"
-                                   FontStyle="Italic" Opacity="0.6"/>
-                        <TextBox Text="{Binding CurrentDescription}"
-                                 PlaceholderText="What are you working on?"/>
-                        <!-- Elapsed time display -->
-                        <TextBlock Text="{Binding ElapsedTime}"
-                                   FontSize="36"
-                                   FontFamily="Courier New"
-                                   FontWeight="Bold"/>
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <Button Content="▶  Start"
-                                    Command="{Binding StartTimerCommand}"
-                                    Width="90"/>
-                            <Button Content="■  Stop"
-                                    Command="{Binding StopTimerCommand}"
-                                    Width="90"/>
-                            <Button Content="Manual entry"
-                                    Click="ManualEntryButton_Click"
-                                    IsEnabled="{Binding SelectedTask, Converter={x:Static ObjectConverters.IsNotNull}}"/>
-                        </StackPanel>
-                    </StackPanel>
-                </Border>
-
-                <!-- Horizontal divider -->
-                <Border Grid.Row="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
-
-                <!-- TIME LOG -->
-                <DockPanel Grid.Row="2" Margin="8">
-                    <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,4">
-                        <TextBlock Text="Time Log" FontWeight="Bold" VerticalAlignment="Center"/>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
-                            <Button Content="Edit"
-                                    Click="EditTimeEntryButton_Click"
-                                    IsEnabled="{Binding SelectedTimeEntry, Converter={x:Static ObjectConverters.IsNotNull}}"/>
-                            <Button Content="Delete"
-                                    Click="DeleteTimeEntryButton_Click"
-                                    IsEnabled="{Binding SelectedTimeEntry, Converter={x:Static ObjectConverters.IsNotNull}}"/>
-                        </StackPanel>
-                    </Grid>
-
-                    <!-- Column headers — widths must match the DataTemplate Grid below -->
-                    <Grid DockPanel.Dock="Top" ColumnDefinitions="110,60,60,80,*,70" Margin="8,0,0,2">
-                        <TextBlock Grid.Column="0" Text="Date"        FontWeight="SemiBold"/>
-                        <TextBlock Grid.Column="1" Text="Start"       FontWeight="SemiBold"/>
-                        <TextBlock Grid.Column="2" Text="Stop"        FontWeight="SemiBold"/>
-                        <TextBlock Grid.Column="3" Text="Duration"    FontWeight="SemiBold"/>
-                        <TextBlock Grid.Column="4" Text="Description" FontWeight="SemiBold"/>
-                        <TextBlock Grid.Column="5" Text="AI Time"     FontWeight="SemiBold" TextAlignment="Right"/>
-                    </Grid>
-
-                    <!-- x:CompileBindings="False" on DataTemplate allows StringFormat -->
-                    <ListBox ItemsSource="{Binding TimeEntries}"
-                             SelectedItem="{Binding SelectedTimeEntry}"
-                             DoubleTapped="TimeEntriesList_DoubleTapped">
+            <!-- Header and row templates use the same column widths so they line up -->
+            <Border Grid.Row="2" Grid.Column="2" Classes="table">
+                <DockPanel>
+                    <Border DockPanel.Dock="Top" Classes="tableheader">
+                        <Grid ColumnDefinitions="80,*,*">
+                            <TextBlock Grid.Column="0" Text="Code"/>
+                            <TextBlock Grid.Column="1" Text="Customer"/>
+                            <TextBlock Grid.Column="2" Text="Description"/>
+                        </Grid>
+                    </Border>
+                    <ListBox Classes="table" ItemsSource="{Binding ProjectItems}"
+                             SelectedItem="{Binding SelectedProjectItem}"
+                             DoubleTapped="ProjectsList_DoubleTapped">
                         <ListBox.ItemTemplate>
-                            <DataTemplate x:CompileBindings="False">
-                                <Grid ColumnDefinitions="110,60,60,80,*,70">
-                                    <TextBlock Grid.Column="0" Text="{Binding StartedAtLocal, StringFormat={}{0:dd-MM-yyyy}}" Padding="0,2"/>
-                                    <TextBlock Grid.Column="1" Text="{Binding StartedAtLocal, StringFormat={}{0:HH:mm}}"      Padding="0,2"/>
-                                    <TextBlock Grid.Column="2" Text="{Binding StoppedAtLocal, StringFormat={}{0:HH:mm}}"      Padding="0,2"/>
-                                    <TextBlock Grid.Column="3" Text="{Binding DurationText}"                                   Padding="0,2"/>
-                                    <TextBlock Grid.Column="4" Text="{Binding Description}"                                   Padding="0,2"/>
-                                    <TextBlock Grid.Column="5" Text="{Binding AiTimeSavedHours, StringFormat={}{0:F1}}" Padding="0,2" TextAlignment="Right"/>
+                            <DataTemplate x:DataType="vm:ProjectListItem">
+                                <!-- Classes.x="{Binding …}" adds style class x while the value is true -->
+                                <Grid ColumnDefinitions="80,*,*">
+                                    <TextBlock Grid.Column="0" Text="{Binding Code}" TextTrimming="CharacterEllipsis"
+                                               Classes.closed="{Binding IsClosed}"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding Customer}" TextTrimming="CharacterEllipsis"
+                                               Classes.closed="{Binding IsClosed}" Classes.allrow="{Binding IsAllRow}"/>
+                                    <TextBlock Grid.Column="2" Text="{Binding Description}" TextTrimming="CharacterEllipsis"
+                                               Classes.closed="{Binding IsClosed}"/>
                                 </Grid>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
                 </DockPanel>
+            </Border>
 
+            <!-- ── Tasks ──────────────────────────────────────────── -->
+            <Grid Grid.Row="0" Grid.Column="4" ColumnDefinitions="*,Auto">
+                <TextBlock Text="TASKS" Classes="section"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                    <Button Classes="small" Content="+" Click="AddTaskButton_Click"
+                            ToolTip.Tip="New task for the selected project"
+                            IsEnabled="{Binding SelectedProject, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+                    <Button Classes="small" Content="Edit…" Click="EditTaskButton_Click"
+                            IsEnabled="{Binding SelectedTask, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+                    <Button Classes="small" Content="−" Click="DeleteTaskButton_Click"
+                            ToolTip.Tip="Delete task"
+                            IsEnabled="{Binding SelectedTask, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+                </StackPanel>
             </Grid>
 
+            <Border Grid.Row="2" Grid.Column="4" Classes="table">
+                <DockPanel>
+                    <Border DockPanel.Dock="Top" Classes="tableheader">
+                        <Grid ColumnDefinitions="*,75,65">
+                            <TextBlock Grid.Column="0" Text="Task"/>
+                            <TextBlock Grid.Column="1" Text="Estimated" TextAlignment="Right"/>
+                            <TextBlock Grid.Column="2" Text="Logged"    TextAlignment="Right"/>
+                        </Grid>
+                    </Border>
+                    <ListBox Classes="table" ItemsSource="{Binding TaskItems}"
+                             SelectedItem="{Binding SelectedTaskItem}"
+                             DoubleTapped="TasksList_DoubleTapped">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:TaskListItem">
+                                <Grid ColumnDefinitions="*,75,65">
+                                    <TextBlock Grid.Column="0" Text="{Binding Name}" TextTrimming="CharacterEllipsis"
+                                               Classes.closed="{Binding IsClosed}" Classes.allrow="{Binding IsAllRow}"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding Estimated}" TextAlignment="Right"
+                                               Classes.closed="{Binding IsClosed}"/>
+                                    <TextBlock Grid.Column="2" Text="{Binding Logged}" TextAlignment="Right"
+                                               Classes.closed="{Binding IsClosed}"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </Border>
+
+            <!-- ── Summary cards ──────────────────────────────────── -->
+            <DockPanel Grid.Row="4" Grid.Column="0">
+                <TextBlock DockPanel.Dock="Top" Text="SUMMARY" Classes="section" Margin="0,8,0,8"/>
+                <ScrollViewer>
+                    <ItemsControl ItemsSource="{Binding SummaryCards}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:SummaryCard">
+                                <Border Classes="card">
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Caption}" Classes="muted" FontSize="11"/>
+                                        <TextBlock Text="{Binding Value}" FontSize="19" FontWeight="Bold"
+                                                   TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Text="{Binding Detail}" FontSize="11" Classes="muted"
+                                                   Classes.below="{Binding IsBelowMinimum}"
+                                                   Classes.ontarget="{Binding IsOnTarget}"
+                                                   TextTrimming="CharacterEllipsis"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </DockPanel>
+
+            <!-- ── Activities / Charts tabs ───────────────────────── -->
+            <TabControl Grid.Row="4" Grid.Column="2" Grid.ColumnSpan="3" Padding="0">
+
+                <TabItem Header="Activities">
+                    <DockPanel Margin="0,6,0,0">
+                        <Grid DockPanel.Dock="Bottom" ColumnDefinitions="Auto,*,Auto" Margin="0,8,0,0">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button Content="Add…" Click="AddActivityButton_Click" Width="80"/>
+                                <Button Content="Edit…" Click="EditActivityButton_Click" Width="80"
+                                        IsEnabled="{Binding SelectedActivity, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+                                <Button Content="Delete" Click="DeleteActivityButton_Click" Width="80"
+                                        IsEnabled="{Binding SelectedActivity, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+                            </StackPanel>
+                            <TextBlock Grid.Column="1" x:Name="FeedbackText" Classes="muted"
+                                       HorizontalAlignment="Right" VerticalAlignment="Center"
+                                       Margin="0,0,12,0" IsVisible="False"/>
+                            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
+                                <Button Content="Export CSV…"   Click="ExportCsvButton_Click"/>
+                                <Button Content="Export Excel…" Click="ExportExcelButton_Click"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <Border Classes="table">
+                            <DockPanel>
+                                <Border DockPanel.Dock="Top" Classes="tableheader">
+                                    <Grid ColumnDefinitions="88,48,48,62,90,130,*,55,90">
+                                        <TextBlock Grid.Column="0" Text="Date"/>
+                                        <TextBlock Grid.Column="1" Text="Start"/>
+                                        <TextBlock Grid.Column="2" Text="End"/>
+                                        <TextBlock Grid.Column="3" Text="Duration" TextAlignment="Right" Margin="0,0,12,0"/>
+                                        <TextBlock Grid.Column="4" Text="Project"/>
+                                        <TextBlock Grid.Column="5" Text="Task"/>
+                                        <TextBlock Grid.Column="6" Text="Remarks"/>
+                                        <TextBlock Grid.Column="7" Text="AI"     TextAlignment="Right"/>
+                                        <TextBlock Grid.Column="8" Text="Amount" TextAlignment="Right"/>
+                                    </Grid>
+                                </Border>
+                                <ListBox Classes="table" ItemsSource="{Binding Activities}"
+                                         SelectedItem="{Binding SelectedActivity}"
+                                         DoubleTapped="ActivitiesList_DoubleTapped">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:ActivityRow">
+                                            <Grid ColumnDefinitions="88,48,48,62,90,130,*,55,90" Background="Transparent">
+                                                <Grid.ContextMenu>
+                                                    <ContextMenu>
+                                                        <MenuItem Header="Copy Remarks" Click="CopyRemarksMenuItem_Click"/>
+                                                    </ContextMenu>
+                                                </Grid.ContextMenu>
+                                                <TextBlock Grid.Column="0" Text="{Binding DateText}"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding StartText}"/>
+                                                <TextBlock Grid.Column="2" Text="{Binding EndText}"/>
+                                                <TextBlock Grid.Column="3" Text="{Binding DurationText}" TextAlignment="Right" Margin="0,0,12,0"/>
+                                                <TextBlock Grid.Column="4" Text="{Binding ProjectName}" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Grid.Column="5" Text="{Binding TaskName}" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Grid.Column="6" Text="{Binding Remarks}" TextTrimming="CharacterEllipsis"
+                                                           ToolTip.Tip="{Binding Remarks}"/>
+                                                <TextBlock Grid.Column="7" Text="{Binding AiTimeSavedText}" TextAlignment="Right"/>
+                                                <TextBlock Grid.Column="8" Text="{Binding AmountText}" TextAlignment="Right"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </DockPanel>
+                        </Border>
+                    </DockPanel>
+                </TabItem>
+
+                <TabItem Header="Charts">
+                    <DockPanel Margin="0,6,0,0">
+                        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="16">
+                            <ComboBox ItemsSource="{Binding ChartKinds}" SelectedIndex="{Binding SelectedChartIndex}"
+                                      Width="220"/>
+                            <TextBlock Text="{Binding ChartTitle}" FontSize="15" FontWeight="Bold"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <Grid Margin="0,14,0,0">
+                            <TextBlock Text="No activities in this period" Classes="muted"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       IsVisible="{Binding !HasChartData}"/>
+
+                            <!-- IsSharedSizeScope + SharedSizeGroup: all rows share the widest
+                                 label and value width, so the bars start and end in line -->
+                            <ScrollViewer>
+                                <ItemsControl ItemsSource="{Binding ChartBars}" Grid.IsSharedSizeScope="True">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:ChartBar">
+                                            <Grid Margin="0,4">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" SharedSizeGroup="ChartLabel"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto" SharedSizeGroup="ChartValue"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="{Binding Label}" MaxWidth="260"
+                                                           TextTrimming="CharacterEllipsis" Margin="0,0,12,0"
+                                                           VerticalAlignment="Center"/>
+                                                <ProgressBar Grid.Column="1" Classes="bar"
+                                                             Maximum="{Binding Maximum}" Value="{Binding Value}"/>
+                                                <TextBlock Grid.Column="2" Text="{Binding ValueText}" Classes="muted"
+                                                           Margin="10,0,0,0" TextAlignment="Right" VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </Grid>
+                    </DockPanel>
+                </TabItem>
+            </TabControl>
         </Grid>
-
-        <!-- STATUS BAR -->
-        <Border Grid.Row="2" Background="{DynamicResource StatusBarBrush}" Padding="12,6">
-            <StackPanel Orientation="Horizontal" Spacing="8">
-                <TextBlock Foreground="{DynamicResource BarForegroundBrush}" Text="Project:"/>
-                <TextBlock Foreground="{DynamicResource BarAccentBrush}" Text="{Binding SelectedProjectName}"/>
-                <TextBlock Foreground="{DynamicResource BarMutedBrush}" Text="|"/>
-                <TextBlock Foreground="{DynamicResource BarForegroundBrush}" Text="Task:"/>
-                <TextBlock Foreground="{DynamicResource BarAccentBrush}" Text="{Binding SelectedTaskName}"/>
-            </StackPanel>
-        </Border>
-
     </Grid>
 </Window>

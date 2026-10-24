@@ -4,11 +4,13 @@ Desktop time registration app built with C#, Avalonia UI, MVVM, EF Core, and SQL
 
 ## What The App Does
 
-- Project and task management (create, edit, delete)
-- Start/stop timer tracking per task
-- Manual time entry with edit/delete support
-- Summary screen with date filters
-- Excel export for filtered summary results
+- Projects (code, customer, description) and tasks (estimated hours) with hourly rate, billable/productive flags, and "closed" to keep history while hiding them
+- Timer with Start, Pause/Resume, Stop, and switching to another task while running
+- Manual time entry with project/task picker, edit and delete
+- Period filter (Today … All Time) combined with project and task selection
+- Summary cards: total, billable %, billable amount, productive %, AI time saved
+- Charts: hours per project, amount per project, hours per task, hours per day
+- CSV and Excel export of the activities shown
 - AI time saved tracking per entry
 
 ## Value Based Billing Support
@@ -18,7 +20,7 @@ TimeTracker includes a field called AI Time Saved (hours).
 Purpose:
 - AI may reduce effort for a task while token/API usage introduces cost.
 - Tracking AI-saved time helps quantify added value for value-based billing.
-- Summary view includes a filtered total: Timed saved by AI.
+- The "AI time saved" summary card shows the total for the selected period, project and task.
 
 This gives teams two perspectives:
 - Delivery effort (Total hours)
@@ -89,14 +91,17 @@ dotnet dotnet-ef migrations add <MigrationName>
 dotnet dotnet-ef database update
 ```
 
-## Summary Screen Features
+## Main Window
 
-- Filter by From/To date and quick Today button
-- Per-entry AI Time column
-- Footer totals:
-	- Total hours
-	- Timed saved by AI (based on current filter)
-- Export to Excel button for filtered rows and totals
+- Timer bar: project and task pickers, remarks, running clock, Start/Pause/Stop
+- Period list, Projects and Tasks tables; "(All …)" rows widen the selection
+- Summary cards stay visible; billable and productive percentages turn red below
+  their minimum and green at their target
+- Activities tab: add/edit/delete, right-click to copy remarks, CSV/Excel export
+- Charts tab: bar charts for the current selection
+
+Billing rules: a task's hourly rate overrides its project's rate when it is above 0,
+and an activity is billable (or productive) only when both its task and project are.
 
 ## Publish
 

@@ -9,8 +9,9 @@ namespace TimeTracker.Repositories;
 
 public class TimeEntryRepository
 {
-    // Loads all completed entries in the date range, including project and task names via JOIN
-    public List<TimeEntry> GetAllInRange(DateTime from, DateTime to)
+    // Completed entries that started within [fromUtc, toUtc), including task and project via JOIN.
+    // projectId / taskId = 0 means "any project" / "any task".
+    public List<TimeEntry> GetCompleted(DateTime fromUtc, DateTime toUtc, int projectId = 0, int taskId = 0)
     {
         using var db = new AppDbContext();
         return db.TimeEntries
@@ -18,29 +19,48 @@ public class TimeEntryRepository
             .Include(entry => entry.ProjectTask)
             .ThenInclude(task => task.Project)
             .Where(entry => entry.StoppedAt.HasValue
-                         && entry.StartedAt >= from
-                         && entry.StartedAt < to)
+                         && entry.StartedAt >= fromUtc
+                         && entry.StartedAt < toUtc)
+            .Where(entry => projectId == 0 || entry.ProjectTask.ProjectId == projectId)
+            .Where(entry => taskId == 0 || entry.ProjectTaskId == taskId)
             .OrderByDescending(entry => entry.StartedAt)  // newest first — pushed to DB
-            .ThenBy(entry => entry.ProjectTask.Project.Name)
-            .ThenBy(entry => entry.ProjectTask.Name)
             .ToList();
     }
 
-    // Returns a tracked entity (no AsNoTracking) so it can be modified and saved via Update()
+    // Total logged hours per task Id, over all time
+    public Dictionary<int, double> GetLoggedHoursByTask()
+    {
+        using var db = new AppDbContext();
+        // EF Core cannot translate date subtraction for SQLite, so fetch only the
+        // timestamps (Select keeps the query small) and add them up in memory.
+        return db.TimeEntries
+            .AsNoTracking()
+            .Where(entry => entry.StoppedAt.HasValue)
+            .Select(entry => new { entry.ProjectTaskId, entry.StartedAt, entry.StoppedAt })
+            .AsEnumerable()  // everything after this line runs in C#, not in SQL
+            .GroupBy(entry => entry.ProjectTaskId)
+            .ToDictionary(
+                group => group.Key,
+                group => group.Sum(entry => (entry.StoppedAt!.Value - entry.StartedAt).TotalHours));
+    }
+
+    public int CountForProject(int projectId)
+    {
+        using var db = new AppDbContext();
+        return db.TimeEntries.Count(entry => entry.ProjectTask.ProjectId == projectId);
+    }
+
+    public int CountForTask(int taskId)
+    {
+        using var db = new AppDbContext();
+        return db.TimeEntries.Count(entry => entry.ProjectTaskId == taskId);
+    }
+
+    // Loads the entry without its navigation properties, ready to edit and pass to Update()
     public TimeEntry? GetById(int id)
     {
         using var db = new AppDbContext();
         return db.TimeEntries.Find(id);
-    }
-
-    public List<TimeEntry> GetAllForTask(int taskId)
-    {
-        using var db = new AppDbContext();
-        return db.TimeEntries
-            .AsNoTracking()  // read-only — no need to track changes
-            .Where(entry => entry.ProjectTaskId == taskId)
-            .OrderByDescending(entry => entry.StartedAt)
-            .ToList();
     }
 
     public void Add(TimeEntry entry)
@@ -55,7 +75,7 @@ public class TimeEntryRepository
         using var db = new AppDbContext();
         // Use Attach + explicit Modified rather than Update() so EF Core does not
         // interpret the null ProjectTask navigation as "clear the relationship".
-        db.Attach(entry).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
+        db.Attach(entry).State = EntityState.Modified;
         db.SaveChanges();
     }
 

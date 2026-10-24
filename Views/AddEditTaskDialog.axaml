@@ -4,7 +4,8 @@
         x:Class="TimeTracker.Views.AddEditTaskDialog"
         x:DataType="vm:AddEditTaskViewModel"
         Title="{Binding Title}"
-        Width="400" Height="210"
+        Width="420"
+        SizeToContent="Height"
         CanResize="False"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False">
@@ -16,9 +17,26 @@
         <TextBlock Text="Description"/>
         <TextBox Text="{Binding Description}"/>
 
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,6,0,0">
+        <Grid ColumnDefinitions="*,8,*">
+            <StackPanel Grid.Column="0" Spacing="4">
+                <TextBlock Text="Estimated hours"/>
+                <TextBox Text="{Binding EstimatedHours}" PlaceholderText="0"/>
+            </StackPanel>
+            <StackPanel Grid.Column="2" Spacing="4">
+                <TextBlock Text="Hourly rate"/>
+                <TextBox Text="{Binding HourlyRate}" PlaceholderText="Project rate"/>
+            </StackPanel>
+        </Grid>
+
+        <CheckBox Content="Billable"   IsChecked="{Binding IsBillable}"/>
+        <CheckBox Content="Productive" IsChecked="{Binding IsProductive}"/>
+        <CheckBox Content="Closed (keep history, hide from the timer)" IsChecked="{Binding IsClosed}"/>
+
+        <TextBlock x:Name="ErrorText" Foreground="Red" TextWrapping="Wrap" MinHeight="20"/>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
             <Button Content="Cancel" Click="CancelButton_Click" Width="80"/>
-            <Button Content="OK"     Click="OkButton_Click"     Width="80"/>
+            <Button Content="OK"     Click="OkButton_Click"     Width="80" IsDefault="True"/>
         </StackPanel>
     </StackPanel>
 </Window>

@@ -22,9 +22,13 @@ for persistence.
 
 | Entity | Fields |
 |---|---|
-| `Project` | Id, Name, Description, IsActive, CreatedAt |
-| `ProjectTask` | Id, ProjectId (FK), Name, Description, IsActive |
-| `TimeEntry` | Id, ProjectTaskId (FK), StartedAt, StoppedAt, Duration (computed), Notes |
+| `Project` | Id, Code, Customer, Description, HourlyRate, IsBillable, IsProductive, IsActive, CreatedAt |
+| `ProjectTask` | Id, ProjectId (FK), Name, Description, EstimatedHours, HourlyRate, IsBillable, IsProductive, IsActive |
+| `TimeEntry` | Id, ProjectTaskId (FK), Description, StartedAt, StoppedAt (UTC), Duration (computed), AiTimeSavedHours |
+
+`IsActive = false` means "closed": kept for history, hidden from the timer pickers. A task's
+`HourlyRate` overrides the project's when above 0. The data model and main-window layout were
+ported from the Xojo version (`~/GitHub/Xojo/TimeTracker3`) in v1.1.0.
 
 ---
 

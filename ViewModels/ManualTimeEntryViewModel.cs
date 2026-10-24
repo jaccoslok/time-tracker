@@ -1,6 +1,9 @@
 using System;
+using System.Collections.ObjectModel;
 using System.Globalization;
+using System.Linq;
 using TimeTracker.Models;
+using TimeTracker.Repositories;
 
 namespace TimeTracker.ViewModels;
 
@@ -48,14 +51,53 @@ public class ManualTimeEntryViewModel : ViewModelBase
         set => SetProperty(ref _aiTimeSavedHours, value);
     }
 
-    // Default constructor — used for adding a new entry
+    // --- Project and task pickers ---
+
+    private readonly ProjectRepository _projectRepository = new();
+    private readonly TaskRepository _taskRepository = new();
+
+    public ObservableCollection<Project> Projects { get; } = [];
+    public ObservableCollection<ProjectTask> Tasks { get; } = [];
+
+    private Project? _selectedProject;
+    public Project? SelectedProject
+    {
+        get => _selectedProject;
+        set
+        {
+            if (SetProperty(ref _selectedProject, value))
+                LoadTasks(selectTaskId: 0);
+        }
+    }
+
+    private ProjectTask? _selectedTask;
+    public ProjectTask? SelectedTask
+    {
+        get => _selectedTask;
+        set => SetProperty(ref _selectedTask, value);
+    }
+
+    // Parameterless constructor — only for the XAML previewer (Design.DataContext)
     public ManualTimeEntryViewModel() { }
+
+    // Constructor for adding a new entry; defaultTaskId (0 = none) preselects a task.
+    // Defaults to the hour that just ended, as long as it falls on today.
+    public ManualTimeEntryViewModel(int defaultTaskId)
+    {
+        var now = DateTime.Now;
+        EndTime = now.ToString("HH:mm");
+        if (now.Hour >= 1)
+            StartTime = now.AddHours(-1).ToString("HH:mm");
+
+        LoadPickers(defaultTaskId);
+    }
 
     // Constructor for editing an existing entry — pre-populates all fields from local time
     public ManualTimeEntryViewModel(TimeEntry entry)
     {
         var localStart = entry.StartedAt.ToLocalTime();
 
+        LoadPickers(entry.ProjectTaskId);
         Title = "Edit Time Entry";
         // DateTimeOffset(DateTime, TimeSpan) throws when Kind==Local and offset != local TZ offset.
         // SpecifyKind(Unspecified) removes that constraint so we can use offset 0 safely.
@@ -66,16 +108,42 @@ public class ManualTimeEntryViewModel : ViewModelBase
         AiTimeSavedHours = (entry.AiTimeSavedHours ?? 0).ToString();
     }
 
+    // Fills the pickers; closed projects and tasks are included so old entries can be edited
+    private void LoadPickers(int taskId)
+    {
+        var task = taskId > 0 ? _taskRepository.GetById(taskId) : null;
+
+        foreach (var project in _projectRepository.GetAll(includeClosed: true))
+            Projects.Add(project);
+
+        // Set the backing field directly, so the setter doesn't load the tasks a second time
+        _selectedProject = Projects.FirstOrDefault(project => project.Id == task?.ProjectId)
+                           ?? Projects.FirstOrDefault();
+        LoadTasks(taskId);
+    }
+
+    private void LoadTasks(int selectTaskId)
+    {
+        Tasks.Clear();
+        if (SelectedProject is not null)
+        {
+            foreach (var task in _taskRepository.GetAllForProject(SelectedProject.Id, includeClosed: true))
+                Tasks.Add(task);
+        }
+        SelectedTask = Tasks.FirstOrDefault(task => task.Id == selectTaskId) ?? Tasks.FirstOrDefault();
+    }
+
     // Creates a brand-new TimeEntry — used when adding
-    public bool TryBuildTimeEntry(int taskId, out TimeEntry? entry)
+    public bool TryBuildTimeEntry(out TimeEntry? entry)
     {
         entry = null;
+        if (SelectedTask is null) return false;
         if (!TryParseRange(out var start, out var end)) return false;
         if (!TryParseAiTime(out var aiHours)) return false;
 
         entry = new TimeEntry
         {
-            ProjectTaskId = taskId,
+            ProjectTaskId = SelectedTask.Id,
             Description   = Description,
             StartedAt     = start,
             StoppedAt     = end,
@@ -87,9 +155,11 @@ public class ManualTimeEntryViewModel : ViewModelBase
     // Applies edited values to an existing TimeEntry in place — used when editing
     public bool TryApplyToEntry(TimeEntry existing)
     {
+        if (SelectedTask is null) return false;
         if (!TryParseRange(out var start, out var end)) return false;
         if (!TryParseAiTime(out var aiHours)) return false;
 
+        existing.ProjectTaskId = SelectedTask.Id;
         existing.StartedAt   = start;
         existing.StoppedAt   = end;
         existing.Description = Description;
@@ -100,6 +170,8 @@ public class ManualTimeEntryViewModel : ViewModelBase
     // Returns null when the time range is valid, or an error message the dialog can display.
     public string? Validate()
     {
+        if (SelectedTask is null)
+            return "Choose a project and task for this time entry.";
         if (!TimeSpan.TryParse(StartTime, out var startSpan))
             return "Start time is not valid. Use HH:mm or HH:mm:ss (e.g. 09:00).";
         if (!TimeSpan.TryParse(EndTime, out var endSpan))

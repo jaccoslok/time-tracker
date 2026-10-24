@@ -17,8 +17,6 @@ public class TimeEntry
     // Computed at runtime from the two timestamps; not persisted in the database
     public TimeSpan? Duration => StoppedAt.HasValue ? StoppedAt.Value - StartedAt : null;
 
-    // UI helper for grids where binding StringFormat for TimeSpan can be brittle.
-    public string DurationText => Duration?.ToString(@"hh\:mm") ?? "—";
 
     // Local-time helpers for display — the stored values are always UTC
     public DateTime StartedAtLocal  => StartedAt.ToLocalTime();

@@ -23,19 +23,32 @@ namespace TimeTracker.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Customer")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<decimal>("HourlyRate")
+                        .HasColumnType("TEXT");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
+                    b.Property<bool>("IsBillable")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsProductive")
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
@@ -52,7 +65,19 @@ namespace TimeTracker.Data.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<double>("EstimatedHours")
+                        .HasColumnType("REAL");
+
+                    b.Property<decimal>("HourlyRate")
+                        .HasColumnType("TEXT");
+
                     b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsBillable")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsProductive")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")

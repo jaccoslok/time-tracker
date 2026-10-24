@@ -8,13 +8,14 @@ namespace TimeTracker.Repositories;
 
 public class ProjectRepository
 {
-    public List<Project> GetAll()
+    public List<Project> GetAll(bool includeClosed = false)
     {
         using var db = new AppDbContext();
         return db.Projects
             .AsNoTracking()  // read-only — no need to track changes
-            .Where(project => project.IsActive)
-            .OrderBy(project => project.Name)
+            .Where(project => includeClosed || project.IsActive)
+            .OrderBy(project => project.Code)
+            .ThenBy(project => project.Customer)
             .ToList();
     }
 

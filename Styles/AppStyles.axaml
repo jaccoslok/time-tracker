@@ -5,35 +5,31 @@
         <ResourceDictionary>
 
             <!-- ── Theme-aware palette ────────────────────────────────────────────
-                 AccentBrush / MutedBrush change between light and dark mode so
-                 that text in the content area always has enough contrast.         -->
+                 Each key exists in both dictionaries; DynamicResource picks the one
+                 matching the current light/dark mode and updates when it changes.  -->
             <ResourceDictionary.ThemeDictionaries>
 
                 <ResourceDictionary x:Key="Light">
-                    <!-- Deep blue: readable on white/light-gray backgrounds -->
-                    <SolidColorBrush x:Key="AccentBrush" Color="#1D6FB8"/>
-                    <SolidColorBrush x:Key="MutedBrush"  Color="#6B7280"/>
+                    <SolidColorBrush x:Key="AccentBrush"  Color="#2F6FEB"/>
+                    <SolidColorBrush x:Key="MutedBrush"   Color="#6B7280"/>
+                    <SolidColorBrush x:Key="CardBrush"    Color="#F1F3F6"/>
+                    <SolidColorBrush x:Key="DividerBrush" Color="#D9DDE3"/>
+                    <SolidColorBrush x:Key="HeaderBrush"  Color="#F6F7F9"/>
+                    <SolidColorBrush x:Key="BelowBrush"   Color="#DC2626"/>
+                    <SolidColorBrush x:Key="OnTargetBrush" Color="#16A34A"/>
                 </ResourceDictionary>
 
                 <ResourceDictionary x:Key="Dark">
-                    <!-- Sky blue: readable on dark backgrounds -->
-                    <SolidColorBrush x:Key="AccentBrush" Color="#93C5FD"/>
-                    <SolidColorBrush x:Key="MutedBrush"  Color="#9CA3AF"/>
+                    <SolidColorBrush x:Key="AccentBrush"  Color="#5B9BFF"/>
+                    <SolidColorBrush x:Key="MutedBrush"   Color="#9CA3AF"/>
+                    <SolidColorBrush x:Key="CardBrush"    Color="#2B2F36"/>
+                    <SolidColorBrush x:Key="DividerBrush" Color="#3A3F47"/>
+                    <SolidColorBrush x:Key="HeaderBrush"  Color="#25282E"/>
+                    <SolidColorBrush x:Key="BelowBrush"   Color="#F87171"/>
+                    <SolidColorBrush x:Key="OnTargetBrush" Color="#4ADE80"/>
                 </ResourceDictionary>
 
             </ResourceDictionary.ThemeDictionaries>
-
-            <!-- ── Constant colours (same in both modes) ──────────────────────────
-                 The app bar and status bar use a dark slate colour regardless of
-                 system theme, so white text always has sufficient contrast.       -->
-            <SolidColorBrush x:Key="AppBarBrush"        Color="#1E293B"/>
-            <SolidColorBrush x:Key="StatusBarBrush"     Color="#0F172A"/>
-            <!-- Foreground used directly on the dark bars -->
-            <SolidColorBrush x:Key="BarForegroundBrush" Color="#E2E8F0"/>
-            <!-- Highlighted text on the dark bars (project/task name, total hours) -->
-            <SolidColorBrush x:Key="BarAccentBrush"     Color="#7CB9E8"/>
-            <!-- Separator / muted text on dark bars -->
-            <SolidColorBrush x:Key="BarMutedBrush"      Color="#64748B"/>
 
             <x:Double x:Key="AppFontSize">13</x:Double>
 
@@ -43,39 +39,120 @@
     <!-- ── Base control styles ─────────────────────────────────────────────── -->
 
     <Style Selector="Button">
-        <Setter Property="Padding"      Value="10,5"/>
+        <Setter Property="Padding"      Value="10,4"/>
         <Setter Property="FontSize"     Value="{StaticResource AppFontSize}"/>
         <Setter Property="CornerRadius" Value="4"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
     </Style>
 
     <Style Selector="TextBlock">
         <Setter Property="FontSize" Value="{StaticResource AppFontSize}"/>
     </Style>
 
-    <!-- ── Top-bar buttons (Summary / About) ──────────────────────────────────
-         These buttons sit on the dark AppBarBrush background.
-         We use a transparent base + semi-white hover overlay so the foreground
-         stays white in both light and dark mode regardless of Fluent's defaults. -->
-
-    <Style Selector="Button.topbar">
-        <Setter Property="Background"      Value="Transparent"/>
-        <Setter Property="Foreground"      Value="{StaticResource BarForegroundBrush}"/>
-        <Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="CornerRadius"    Value="4"/>
-        <Setter Property="Padding"         Value="10,5"/>
-        <Setter Property="FontSize"        Value="{StaticResource AppFontSize}"/>
+    <!-- Small "+", "Edit…", "−" buttons next to a list heading -->
+    <Style Selector="Button.small">
+        <Setter Property="Padding"   Value="8,1"/>
+        <Setter Property="MinWidth"  Value="28"/>
     </Style>
 
-    <!-- Override the Fluent template's ContentPresenter so hover/press cannot
-         change the foreground colour to black (which happens in light mode).   -->
-    <Style Selector="Button.topbar:pointerover /template/ ContentPresenter">
-        <Setter Property="Background" Value="#22FFFFFF"/>
-        <Setter Property="Foreground" Value="{StaticResource BarForegroundBrush}"/>
+    <!-- Upper-case headings: PERIOD, PROJECTS, TASKS, SUMMARY -->
+    <Style Selector="TextBlock.section">
+        <Setter Property="FontSize"          Value="11"/>
+        <Setter Property="FontWeight"        Value="Bold"/>
+        <Setter Property="Foreground"        Value="{DynamicResource MutedBrush}"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
 
-    <Style Selector="Button.topbar:pressed /template/ ContentPresenter">
-        <Setter Property="Background" Value="#33FFFFFF"/>
-        <Setter Property="Foreground" Value="{StaticResource BarForegroundBrush}"/>
+    <Style Selector="TextBlock.muted">
+        <Setter Property="Foreground" Value="{DynamicResource MutedBrush}"/>
+    </Style>
+
+    <!-- Summary detail lines: below the minimum = red, at or above the target = green.
+         Defined after .muted so these win when both classes are set. -->
+    <Style Selector="TextBlock.below">
+        <Setter Property="Foreground" Value="{DynamicResource BelowBrush}"/>
+    </Style>
+    <Style Selector="TextBlock.ontarget">
+        <Setter Property="Foreground" Value="{DynamicResource OnTargetBrush}"/>
+    </Style>
+
+    <!-- The running time in the timer bar. Menlo is macOS, Consolas Windows; the first one found is used. -->
+    <Style Selector="TextBlock.clock">
+        <Setter Property="FontFamily" Value="Menlo, Consolas, Courier New"/>
+        <Setter Property="FontSize"   Value="32"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+    </Style>
+
+    <Style Selector="Border.card">
+        <Setter Property="Background"   Value="{DynamicResource CardBrush}"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding"      Value="12,8"/>
+        <Setter Property="Margin"       Value="0,0,0,8"/>
+    </Style>
+
+    <!-- ── Tables (ListBox with a column header row) ───────────────────────── -->
+
+    <Style Selector="Border.table">
+        <Setter Property="BorderBrush"     Value="{DynamicResource DividerBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <!-- Same radius as Border.card; ClipToBounds clips the header and the
+             selected-row highlight to the rounded corners -->
+        <Setter Property="CornerRadius"    Value="8"/>
+        <Setter Property="ClipToBounds"    Value="True"/>
+    </Style>
+
+    <Style Selector="Border.tableheader">
+        <Setter Property="Background"      Value="{DynamicResource HeaderBrush}"/>
+        <Setter Property="BorderBrush"     Value="{DynamicResource DividerBrush}"/>
+        <Setter Property="BorderThickness" Value="0,0,0,1"/>
+        <!-- Rounded top corners, matching the table's outer border -->
+        <Setter Property="CornerRadius"    Value="7,7,0,0"/>
+        <Setter Property="Padding"         Value="8,3"/>
+    </Style>
+
+    <Style Selector="Border.tableheader TextBlock">
+        <Setter Property="FontSize"   Value="12"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+
+    <Style Selector="ListBox.table">
+        <Setter Property="Background" Value="Transparent"/>
+    </Style>
+
+    <!-- Compact rows; Fluent's default ListBoxItem is much taller -->
+    <Style Selector="ListBox.table ListBoxItem">
+        <Setter Property="Padding"  Value="8,2"/>
+        <Setter Property="MinHeight" Value="0"/>
+    </Style>
+
+    <!-- Closed projects/tasks: the "closed" class is toggled by a binding in the list templates -->
+    <Style Selector="TextBlock.closed">
+        <Setter Property="Opacity" Value="0.45"/>
+    </Style>
+
+    <!-- The "(All projects)" / "(All tasks)" rows -->
+    <Style Selector="TextBlock.allrow">
+        <Setter Property="FontStyle"  Value="Italic"/>
+        <Setter Property="Foreground" Value="{DynamicResource MutedBrush}"/>
+    </Style>
+
+    <!-- ── Tabs and chart ──────────────────────────────────────────────────── -->
+
+    <Style Selector="TabItem">
+        <Setter Property="FontSize"  Value="14"/>
+        <Setter Property="MinHeight" Value="34"/>
+        <Setter Property="Padding"   Value="12,0"/>
+    </Style>
+
+    <!-- A ProgressBar from 0 to Maximum makes a simple horizontal bar -->
+    <Style Selector="ProgressBar.bar">
+        <Setter Property="Foreground"   Value="{DynamicResource AccentBrush}"/>
+        <Setter Property="Background"   Value="Transparent"/>
+        <Setter Property="Height"       Value="16"/>
+        <Setter Property="MinHeight"    Value="16"/>
+        <Setter Property="MinWidth"     Value="0"/>
+        <Setter Property="CornerRadius" Value="4"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
 
 </Styles>

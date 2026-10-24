@@ -1,115 +1,52 @@
-using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using Avalonia.Controls;
-using Avalonia.Threading;
-using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.ComponentModel;
+using TimeTracker.Helpers;
 using TimeTracker.Models;
 using TimeTracker.Repositories;
 
 namespace TimeTracker.ViewModels;
 
-public class MainWindowViewModel : ViewModelBase
+// "partial": this class continues in MainWindowViewModel.Timer.cs and MainWindowViewModel.Summary.cs.
+// The CommunityToolkit source generators also add generated code to it.
+public partial class MainWindowViewModel : ViewModelBase
 {
     private readonly ProjectRepository _projectRepository = new();
     private readonly TaskRepository _taskRepository = new();
     private readonly TimeEntryRepository _timeEntryRepository = new();
 
-    public ObservableCollection<Project> Projects { get; } = [];
-    public ObservableCollection<ProjectTask> Tasks { get; } = [];
-    public ObservableCollection<TimeEntry> TimeEntries { get; } = [];
+    // True while lists are rebuilt in code, so the selection-changed handlers ignore
+    // the temporary selections that causes (Xojo's mUpdating)
+    private bool _isUpdating;
 
-    // --- Selected items ---
+    public IReadOnlyList<string> PeriodNames => Periods.Names;
+    public ObservableCollection<ProjectListItem> ProjectItems { get; } = [];
+    public ObservableCollection<TaskListItem> TaskItems { get; } = [];
 
-    private Project? _selectedProject;
-    public Project? SelectedProject
-    {
-        get => _selectedProject;
-        set
-        {
-            if (SetProperty(ref _selectedProject, value))
-            {
-                OnPropertyChanged(nameof(SelectedProjectName));
-                LoadTasksForProject(value);
-            }
-        }
-    }
+    // [ObservableProperty] generates a public property "SelectedPeriodIndex" for this field,
+    // including the PropertyChanged notification. No hand-written getter/setter needed.
+    [ObservableProperty]
+    private int _selectedPeriodIndex = Periods.ThisWeek;
 
-    public string SelectedProjectName => SelectedProject?.Name ?? "—";
+    // [NotifyPropertyChangedFor] also raises PropertyChanged for SelectedProject,
+    // because that property is calculated from this one
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SelectedProject))]
+    private ProjectListItem? _selectedProjectItem;
 
-    private ProjectTask? _selectedTask;
-    public ProjectTask? SelectedTask
-    {
-        get => _selectedTask;
-        set
-        {
-            if (SetProperty(ref _selectedTask, value))
-            {
-                OnPropertyChanged(nameof(SelectedTaskName));
-                LoadTimeEntriesForTask(value);
-                // Refresh the Start button's enabled state when the task selection changes
-                StartTimerCommand.NotifyCanExecuteChanged();
-            }
-        }
-    }
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SelectedTask))]
+    private TaskListItem? _selectedTaskItem;
 
-    public string SelectedTaskName => SelectedTask?.Name ?? "—";
-
-    // --- Timer state ---
-
-    private DispatcherTimer? _timer;
-    private DateTime _timerStartedAt;
-    // Captured when Start is clicked — holds the task even if the user navigates away
-    private ProjectTask? _timerTask;
-    private string _runningDescription = string.Empty;
-
-    private bool _isTimerRunning;
-    public bool IsTimerRunning
-    {
-        get => _isTimerRunning;
-        set
-        {
-            if (SetProperty(ref _isTimerRunning, value))
-            {
-                // Both buttons depend on this value — re-evaluate both
-                StartTimerCommand.NotifyCanExecuteChanged();
-                StopTimerCommand.NotifyCanExecuteChanged();
-            }
-        }
-    }
-
-    private string _elapsedTime = "00:00:00";
-    public string ElapsedTime
-    {
-        get => _elapsedTime;
-        set => SetProperty(ref _elapsedTime, value);
-    }
-
-    private string _currentDescription = string.Empty;
-    public string CurrentDescription
-    {
-        get => _currentDescription;
-        set => SetProperty(ref _currentDescription, value);
-    }
-
-    // Shows which task the running timer belongs to — unaffected by project/task navigation
-    private string _timerTaskName = "Select a task to start the timer";
-    public string TimerTaskName
-    {
-        get => _timerTaskName;
-        set => SetProperty(ref _timerTaskName, value);
-    }
-
-    // RelayCommand(action, canExecute) — canExecute controls whether the button is enabled
-    public RelayCommand StartTimerCommand { get; }
-    public RelayCommand StopTimerCommand { get; }
-
-    // --- Constructor ---
+    // null when the "(All …)" row is selected
+    public Project? SelectedProject => SelectedProjectItem?.Project;
+    public ProjectTask? SelectedTask => SelectedTaskItem?.Task;
 
     public MainWindowViewModel()
     {
-        StartTimerCommand = new RelayCommand(StartTimer, () => SelectedTask is not null);
-        StopTimerCommand  = new RelayCommand(StopTimer,  () => IsTimerRunning);
+        _ticker.Tick += (_, _) => UpdateTimerDisplay();
 
         // Skip DB access when the Avalonia XAML previewer instantiates this ViewModel
         // via <Design.DataContext> — SQLite native libs are not available in the previewer.
@@ -117,179 +54,150 @@ public class MainWindowViewModel : ViewModelBase
             LoadProjects();
     }
 
-    // --- Projects ---
+    // --- Selection changes ---
+    // The generator calls these "partial" methods after the property value changed
 
-    private void LoadProjects()
+    partial void OnSelectedPeriodIndexChanged(int value) => LoadActivities();
+
+    partial void OnSelectedProjectItemChanged(ProjectListItem? value)
     {
-        Projects.Clear();
-        foreach (var project in _projectRepository.GetAll())
-            Projects.Add(project);
+        if (_isUpdating) return;
 
-        SelectedProject = Projects.FirstOrDefault(project => project.Id == _selectedProject?.Id)
-                          ?? Projects.FirstOrDefault();
+        // When idle, picking a project in the list also prepares the timer for it
+        if (State == TimerState.Stopped && value?.Project is { IsActive: true } project)
+            SelectTimerProject(project.Id);
+
+        LoadTasks();
     }
+
+    partial void OnSelectedTaskItemChanged(TaskListItem? value)
+    {
+        if (_isUpdating) return;
+
+        // When idle, picking a task in the list also prepares the timer for it
+        if (State == TimerState.Stopped && value?.Task is { IsActive: true } task)
+        {
+            SelectTimerProject(task.ProjectId);
+            TimerTask = TimerTasks.FirstOrDefault(timerTask => timerTask.Id == task.Id);
+        }
+
+        LoadActivities();
+    }
+
+    // --- Loading lists ---
+
+    // Reloads projects, then tasks, activities and the timer pickers.
+    // selectProjectId picks a row after reloading; null keeps the current selection.
+    private void LoadProjects(int? selectProjectId = null)
+    {
+        var selectedId = selectProjectId ?? SelectedProject?.Id ?? 0;
+
+        _isUpdating = true;
+        ProjectItems.Clear();
+        ProjectItems.Add(new ProjectListItem(null));
+        // Closed projects stay visible (dimmed) until the "Hide closed" setting exists
+        foreach (var project in _projectRepository.GetAll(includeClosed: true))
+            ProjectItems.Add(new ProjectListItem(project));
+        SelectedProjectItem = ProjectItems.FirstOrDefault(item => item.Project?.Id == selectedId)
+                              ?? ProjectItems[0];
+        _isUpdating = false;
+
+        LoadTimerProjects();
+        LoadTasks();
+    }
+
+    // Reloads the tasks of the selected project (or all tasks), then the activities
+    private void LoadTasks(int? selectTaskId = null)
+    {
+        var selectedId = selectTaskId ?? SelectedTask?.Id ?? 0;
+        var projectId = SelectedProject?.Id ?? 0;
+        var loggedHours = _timeEntryRepository.GetLoggedHoursByTask();
+
+        _isUpdating = true;
+        TaskItems.Clear();
+        TaskItems.Add(new TaskListItem(null, ShowProjectCode: false, LoggedHours: 0));
+        foreach (var task in _taskRepository.GetAllForProject(projectId, includeClosed: true))
+        {
+            // With "(All projects)" selected, prefix each task with its project code
+            TaskItems.Add(new TaskListItem(task, ShowProjectCode: projectId == 0,
+                                           loggedHours.GetValueOrDefault(task.Id)));
+        }
+        SelectedTaskItem = TaskItems.FirstOrDefault(item => item.Task?.Id == selectedId)
+                           ?? TaskItems[0];
+        _isUpdating = false;
+
+        LoadActivities();
+    }
+
+    // --- Projects ---
 
     public void AddProject(Project project)
     {
-        _projectRepository.Add(project);
-        // Pre-set the backing field so LoadProjects selects the new project directly,
-        // avoiding a second LoadTasksForProject triggered by the explicit setter below.
-        _selectedProject = project;
-        LoadProjects();
+        _projectRepository.Add(project);  // EF Core fills in project.Id
+        LoadProjects(selectProjectId: project.Id);
     }
 
     public void UpdateProject(Project project)
     {
         _projectRepository.Update(project);
         LoadProjects();
+        UpdateTimerDisplay();  // the running project's name may have changed
     }
 
     public void DeleteProject(Project project)
     {
-        _projectRepository.Delete(project.Id);
+        _projectRepository.Delete(project.Id);  // tasks and entries go with it (cascade delete)
         LoadProjects();
     }
 
+    public int CountTimeEntries(Project project) => _timeEntryRepository.CountForProject(project.Id);
+
     // --- Tasks ---
-
-    private void LoadTasksForProject(Project? project)
-    {
-        Tasks.Clear();
-        SelectedTask = null;
-
-        if (project is null) return;
-
-        foreach (var task in _taskRepository.GetAllForProject(project.Id))
-            Tasks.Add(task);
-    }
 
     public void AddTask(ProjectTask task)
     {
         _taskRepository.Add(task);
-        // Pre-set the backing field so LoadTasksForProject selects the new task directly,
-        // avoiding a second LoadTimeEntriesForTask triggered by the explicit setter below.
-        _selectedTask = task;
-        LoadTasksForProject(SelectedProject);
+        LoadTimerTasks();
+        LoadTasks(selectTaskId: task.Id);
     }
 
     public void UpdateTask(ProjectTask task)
     {
         _taskRepository.Update(task);
-        LoadTasksForProject(SelectedProject);
+        LoadTimerTasks();
+        LoadTasks();
+        UpdateTimerDisplay();
     }
 
     public void DeleteTask(ProjectTask task)
     {
         _taskRepository.Delete(task.Id);
-        LoadTasksForProject(SelectedProject);
+        LoadTimerTasks();
+        LoadTasks();
     }
+
+    public int CountTimeEntries(ProjectTask task) => _timeEntryRepository.CountForTask(task.Id);
 
     // --- Time entries ---
 
-    private TimeEntry? _selectedTimeEntry;
-    public TimeEntry? SelectedTimeEntry
-    {
-        get => _selectedTimeEntry;
-        set => SetProperty(ref _selectedTimeEntry, value);
-    }
-
-    public void LoadTimeEntriesForTask(ProjectTask? task)
-    {
-        TimeEntries.Clear();
-        SelectedTimeEntry = null;
-
-        if (task is null) return;
-
-        foreach (var entry in _timeEntryRepository.GetAllForTask(task.Id))
-            TimeEntries.Add(entry);
-    }
+    public TimeEntry? GetTimeEntry(int id) => _timeEntryRepository.GetById(id);
 
     public void AddTimeEntry(TimeEntry entry)
     {
         _timeEntryRepository.Add(entry);
-        LoadTimeEntriesForTask(SelectedTask);
+        LoadTasks();  // refreshes "Logged" hours, activities, summary and chart
+        SelectedActivity = Activities.FirstOrDefault(row => row.Id == entry.Id);
     }
 
     public void UpdateTimeEntry(TimeEntry entry)
     {
         _timeEntryRepository.Update(entry);
-        LoadTimeEntriesForTask(SelectedTask);
+        LoadTasks();
     }
 
-    public void DeleteTimeEntry(TimeEntry entry)
+    public void DeleteTimeEntry(ActivityRow row)
     {
-        _timeEntryRepository.Delete(entry.Id);
-        LoadTimeEntriesForTask(SelectedTask);
-    }
-
-    // --- Timer ---
-
-    private void StartTimer()
-    {
-        if (SelectedTask is null) return;
-
-        var switchAt = DateTime.UtcNow;
-
-        // If a timer is already running, close the current entry first and start a new one
-        // at the exact same timestamp (no lost or overlapping time).
-        if (IsTimerRunning)
-            SaveRunningEntry(switchAt);
-
-        _timerTask = SelectedTask; // capture now — SelectedTask may change later
-        _timerStartedAt = switchAt;
-        _runningDescription = CurrentDescription;
-        IsTimerRunning = true;
-        // Show "ProjectName TaskName" so tasks with identical names are distinguishable
-        TimerTaskName = $"{SelectedProject?.Name} | {_timerTask.Name}";
-        ElapsedTime = "00:00:00";
-
-        if (_timer is null)
-        {
-            _timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
-            _timer.Tick += OnTimerTick;
-            _timer.Start();
-        }
-    }
-
-    private void StopTimer()
-    {
-        if (!IsTimerRunning) return;
-
-        SaveRunningEntry(DateTime.UtcNow);
-
-        _timer?.Stop();
-        _timer = null;
-        IsTimerRunning = false;
-        ElapsedTime = "00:00:00";
-        TimerTaskName = "Select a task to start the timer";
-        _timerTask = null;
-        _runningDescription = string.Empty;
-        CurrentDescription = string.Empty;
-    }
-
-    private void SaveRunningEntry(DateTime stoppedAt)
-    {
-        if (_timerTask is null) return;
-
-        var entry = new TimeEntry
-        {
-            ProjectTaskId = _timerTask.Id,    // use the captured task, not SelectedTask
-            Description   = _runningDescription,
-            StartedAt     = _timerStartedAt,
-            StoppedAt     = stoppedAt
-        };
-
-        _timeEntryRepository.Add(entry);
-
-        // Only reload the time log if the user is still on the task being closed
-        if (SelectedTask?.Id == _timerTask.Id)
-            LoadTimeEntriesForTask(SelectedTask);
-    }
-
-    // Called every second by the timer — updates the displayed elapsed time
-    private void OnTimerTick(object? sender, EventArgs e)
-    {
-        var elapsed = DateTime.UtcNow - _timerStartedAt;
-        ElapsedTime = elapsed.ToString(@"hh\:mm\:ss");
+        _timeEntryRepository.Delete(row.Id);
+        LoadTasks();
     }
 }
